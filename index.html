@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frame Bar Editor</title>
+<style>
+:root{
+  --bg:#14161a; --panel:#1d2026; --panel2:#252931; --line:#343a44; --text:#e8eaed; --muted:#9aa0a8;
+  --accent:#e07a3f; --p1:#e2763c; --p2:#4a8fe0; --ok:#5fbf7a; --warn:#e0b84a; --bad:#e05a5a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(420px,520px) 1fr;gap:16px;padding:16px 20px;align-items:start}
+@media (max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.stack>*+*{margin-top:14px}
+.sticky{position:sticky;top:12px}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side{border-top:3px solid var(--p1);padding-top:8px}
+.side.p2{border-top-color:var(--p2)}
+.side h3{margin:0 0 6px;font-size:13px;display:flex;align-items:center;gap:8px}
+.side h3 .tag{font-weight:700}
+.side.p1 h3 .tag{color:var(--p1)} .side.p2 h3 .tag{color:var(--p2)}
+.ctl{margin:6px 0 10px}
+.ctl .lab{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:3px}
+.ctl input[type=number]{width:72px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:13px;text-align:right}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.nudge{display:flex;gap:4px}
+.nudge button{flex:1;padding:2px 0;font-size:12px;border-radius:6px}
+.check{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font:inherit;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a0f08;font-weight:650}
+button:disabled{opacity:.45;cursor:not-allowed}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.hot{border-color:var(--accent);color:var(--text)}
+.status{font-size:13px;margin-top:8px}
+.status.ok{color:var(--ok)} .status.bad{color:var(--bad)} .status.warn{color:var(--warn)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 10px}
+.seg button.on{background:var(--p2);color:#08111c;font-weight:650}
+canvas{width:100%;height:auto;display:block;border-radius:8px;background:#0b0c0e;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:ui-monospace,Consolas,monospace}
+td,th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
+th{color:var(--muted);font-weight:500}
+.note{color:var(--muted);font-size:12px;margin:6px 0 0}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--panel2);padding:1px 4px;border-radius:4px}
+.dis{opacity:.4;pointer-events:none}
+.simple .side.p2{display:none}
+.simple .sides{grid-template-columns:1fr}
+.simple [data-copy]{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Frame Bar Editor</h1>
+  <span class="sub">Avatar Legends: training-mode framedata bars &middot; edits <code>training_timing_bar.pak</code></span>
+</header>
+<main>
+  <div class="stack" id="controls">
+    <div class="card">
+      <h2>1. Load a pak</h2>
+      <div id="drop" class="drop">Drop <b>training_timing_bar.pak</b> here, or click to choose it.<br><span class="note">The installed pak, the original <b>.bak</b>, or one saved from this editor. The controls start from whatever you load.</span></div>
+      <input id="file" type="file" accept=".pak,.bak" hidden>
+      <div id="status" class="status">No file loaded.</div>
+    </div>
+    <div class="card">
+      <h2>2. Presets and save</h2>
+      <div class="toolbar">
+        <button id="save" class="primary" disabled>Download patched pak</button>
+        <button id="revert" disabled>Revert to loaded file</button>
+        <button id="pRec">Recommended</button>
+        <button id="pShip">Shipped</button>
+      </div>
+      <div class="check"><input id="simple" type="checkbox"><label for="simple"><b>Simple edit</b>: one set of controls; P2 follows P1 with X mirrored</label></div>
+      <div class="check"><input id="noBox" type="checkbox"><label for="noBox">Remove the counter box (both sides share one image)</label></div>
+      <p class="note">Put the download in <code>data_packages</code> as <code>training_timing_bar.pak</code>, then restart the game. X: + moves right. Y: + moves down. Element offsets are relative to where the game puts that element on its own bar.</p>
+    </div>
+    <div id="groups"></div>
+  </div>
+
+  <div class="stack sticky">
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Preview (1920 &times; 1080)</h2>
+        <span class="seg"><button id="vFile" disabled>Loaded file</button><button id="vEdit" class="on">Your edits</button></span>
+        <label class="check" style="margin:0"><input id="zoom" type="checkbox" checked> Zoom</label>
+        <button id="bgBtn">Screenshot background</button>
+        <input id="bgFile" type="file" accept="image/*" hidden>
+        <input id="bgAlpha" type="range" min="0" max="100" value="55" style="width:80px" title="Background opacity">
+      </div>
+      <p id="viewNote" class="note"></p>
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <p class="note">Drawn from measurements of your screenshots, so expect a few pixels of difference from the game. Load a training-mode screenshot as the background to compare.</p>
+    </div>
+    <div class="card">
+      <h2>Values written to the pak</h2>
+      <table id="vals"><thead><tr><th>What</th><th>P1 / P3</th><th>P2 / P4</th></tr></thead><tbody></tbody></table>
+      <p class="note">The script uses 2048 = 1 pixel at 1080p. P3 and P4 (2v2) share P1's and P2's settings.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+"use strict";
+const ORIGINAL_SHA256 = "7d4b47a8d580008747f5879c551f726daab3c787fef55a6f5b3c7114872932b4";
+const PX = 2048, IMM = 0x0e10, SELF = 0xd431, CHILD = 0x0022, PARENT = 0x0021, NONE = 0xd431;
+// spare variables (file ids): persistent ones cross into the bar's later animations, locals are used at spawn time
+const V = { ilX: 182, ilY: 183, nX: 184, nY: 185, olX: 189, olY: 190, tX: 191, tY: 192, alpha: 102 };
+const OFFSCREEN = -4000;
+// shipped script regions the patch rewrites (so any pak this editor made can be edited again)
+const ORIG_SPAWNED = "560010000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c00dab4086c31d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000000e7a914231d4000008000000100e31d42200000000000000000000000000000000000000000000000000000067376c5a31d4000009000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d4220000000000000000000000000000000000000000000000000000000000000031d400006800000031d431d4220000000000000000000000000000000000000000000000000000000008000031d4000067000000100e31d4220000000000000000000000000000000000000000000000000000009700000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000006300000031d400006300000031d431d4220000000000000000000000000000000000000000000000000000000e7a914231d400008b000000100e31d4220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000009700b0000000690000000c00000031d4970031d4000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000008000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000006e005316848d31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560016000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c007c322b6331d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000007478657431d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d422000000000000000000000000000000000000000000000000000000f1b2bd5831d4000000060000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400006800000031d431d4220000000000000000000000000000000000000000000000000000000008000031d4000067000000100e31d4220000000000000000000000000000000000000000000000000000009700000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000006300000031d400006300000031d431d42200000000000000000000000000000000000000000000000000000016b0ef3931d400008b000000100e31d4220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000009700b0000000690000000c00000031d4970031d4000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000008000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000006e005316848d31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000020000031d4000031d4100e31d4000000000000000000000000000000000000000000000000000022be8e5831d400008b000000100e31d4220000000000000000000000000000000000000000000000000000002200000031d40000c100000031d431d431d4000000000000000000000000000000000000000000000000560015000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c00dab4086c31d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000000e7a914231d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d4220000000000000000000000000000000000000000000000000000000000000031d400006800000031d431d4220000000000000000000000000000000000000000000000000000000008000031d4000067000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000006300000031d400006300000031d431d42200000000000000000000000000000000000000000000000000000067376c5a31d4000009000000100e31d42200000000000000000000000000000000000000000000000000000022be8e5831d400008b000000100e31d4220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000009700b0000000690000000c00000031d4970031d4000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000008000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000006e005316848d31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000020000031d4000031d4100e31d4000000000000000000000000000000000000000000000000000016b0ef3931d400008b000000100e31d42200000000000000000000000000000000000000000000000000";     // 0x4149 .. 0x4c75 (65 records)
+const ORIG_FRAME = "00000006000031d4000066000000100e31d431d4000000000000000000000000000000000000000000000000560005000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c00422f2dee31d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000000072616231d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d42200000000000000000000000000000000000000000000000000010067000000001000006700000031d4100e220000000000000000000000000000000000000000000000000000009700000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000001f00000031d400001f00000031d431d4220000000000000000000000000000000000000000000000000056000f000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c003fbea87031d4000031d40000100e31d431d40000000000000000000000000000000000000000000000000000649e330a31d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d422000000000000000000000000000000000000000000000000000000955efc3131d400008b000000100e31d42200000000000000000000000000000000000000000000000000010067000000001000006700000031d4100e220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000000007031d4000000060000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000006e004ebf5f5b31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000020000031d4000031d4100e31d400000000000000000000000000000000000000000000000002000040000031d400008e000000100e31d4220000000000000000000000000000000000000000000000000033006900000031d400000c000000970031d431d400000000000000000000000000000000000000000000000004000c00000031d400000006000031d431d42200000000000000000000000000000000000000000000000000";         // 0x50c9 .. 0x5515 (25 records)
+const FRAME_SHIPPED = b64("GAAAAAAAAAAAAQAAAAA4ZDIwZDQ1ZgAAAAAGMQAAACFzcmMvc3ByaXRlcy90cmFpbmluZ190aW1pbmdfYmFyL2ZyYW1lcy9mcmFtZS5wbmcKAAAACgAAAGwDAABIAAAAgQMAAF0AAAD8AwAARAAAAAAAAAAcAAAAAwAAAB4AAAACAAAAIgAAAFQAAAD///8PAADgAAAADgEAAADABAAAwDsEALgEAAAfAAEA///////////////////tH/8EAOsP8A///////////////////////////////////////////wIf/wQA//////////////////9mD/AP/20P7A///////////////////2gP9A9hD2wB+Q7sDw/0D///////////////////zQ/wD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5HwDwD////////////////////+4P9A/////tX/4AAAD9BAD/iRP+BAAPZAT///8UH/7gBv///6MPzAP/6g/wD/9pDwEA/////////////////z8P8A///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////4cPmAH//g8BAP4PiBL////////////////4D/AP//////////////////////////////////////////////////////////////////////////////////////////////////////////9VHwDsD////////////////////g/wD90P9A//Eg8BAP//////////////////Kw9gDv//////////////////Ww/wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////dlAAAAAAAA=="), FRAME_NOBOX = b64("GAAAAAAAAAAAAQAAAAA4ZDIwZDQ1ZgAAAAAGMQAAACFzcmMvc3ByaXRlcy90cmFpbmluZ190aW1pbmdfYmFyL2ZyYW1lcy9mcmFtZS5wbmcKAAAACgAAAGwDAABIAAAAgQMAAF0AAAD8AwAARAAAAAAAAAAcAAAAAwAAAB4AAAACAAAAIgAAAFQAAAD///8PAADgAAAADgEAAACHBAAAwDsEAH8EAAAfAAEA////////////////////////////////////////////////////////////////Ax//BAD/////////////////5g/sD////////////////////+sEBAAP7A/////////////////////oBAQAD/AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////eDhDvDwT//////////////////////////95f/gAAAP0EAP+JE/4EAA9kBP///xQf/uAG////ow/MA/9kDwEA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1FAAAAAAAA==");
+function b64(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+const hexBytes = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+const SPAWNED = hexBytes(ORIG_SPAWNED), FRAMEREG = hexBytes(ORIG_FRAME);
+
+// ---------- settings model ----------
+const ELEMENTS = [
+  { key: "bar", name: "Bar", show: false, fields: [["x", "X (from screen centre)", -960, 960], ["y", "Row height (screen y)", 600, 1080]] },
+  { key: "outline", name: "Outline", show: true, fields: [] },
+  { key: "inner", name: "Inner label (P1/P2 at the inner end)", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "outer", name: "Outer label (P1/P2 at the outer end)", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "num", name: "+/− number", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "tag", name: "Number tag (P1/P2 beside the number)", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] }
+];
+const side = (bx, by, o) => ({ bar: { x: bx, y: by }, outline: { on: true }, inner: { on: true, x: 0, y: 0 }, outer: o.outer, num: o.num, tag: o.tag });
+const PRESETS = {
+  shipped: () => ({ noBox: false,
+    p1: side(-450, 991, { outer: { on: false, x: 0, y: 0 }, num: { on: true, x: 0, y: 0 }, tag: { on: false, x: 0, y: 0 } }),
+    p2: side(450, 991, { outer: { on: false, x: 0, y: 0 }, num: { on: true, x: 0, y: 0 }, tag: { on: false, x: 0, y: 0 } }) }),
+  recommended: () => { const r = { noBox: true,
+    p1: side(0, 920.5, { outer: { on: true, x: 0, y: -25 }, num: { on: true, x: -865, y: 41.5 }, tag: { on: true, x: -892, y: 19.5 } }),
+    p2: side(0, 953.5, { outer: { on: true, x: 0, y: -25 }, num: { on: true, x: 865, y: 8.5 }, tag: { on: true, x: 892, y: -13.5 } }) };
+    r.p1.inner = { on: true, x: -10, y: 4 }; r.p2.inner = { on: true, x: 11, y: 4 };   // line up with the outer labels on each end
+    return r; }
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+let S = PRESETS.recommended(), fileS = null, fileKind = null, view = "edit";
+let base = null, sprOff = 0, frameEntry = null, bgImg = null;
+const UI = { zoom: true, bgAlpha: 0.55, simple: false };
+try { UI.simple = localStorage.getItem("framebar-simple") === "1"; } catch (err) {}
+
+// ---------- calibrated screen model (1080p) ----------
+const rowFromY = y => 541 - y, rowY = r => 541 - r;
+// Calibrated against an in-game 1080p screenshot of the version 10 layout. Offsets from the bar centre (cx) and row (y);
+// "in" = the inner end (P1: right, P2: left). P1 and P2 differ by a pixel or two because the art isn't perfectly symmetric.
+const CAL = {
+  p1: { inner: 402, tag: 400.5, num: 400.5, outerEdge: -386.5, outerDy: 26 },
+  p2: { inner: -403, tag: -403, num: -406, outerEdge: 384, outerDy: 25.5 },
+  innerDy: -3.5, numDy: -27.5, tagDy: -2.5,
+  stripL: -376, seg: 10, pitch: 12, segs: 63, segH: 13,
+  outL: -422, outR: 421, outH: 17, countDy: 17.5
+};
+const BOX_IN = 382, BOX_OUT = 452, BOX_TOP = -16, BOX_BOT = 59;     // shipped counter box (approximate)
+function geo(s, p) {            // screen positions of everything on one side
+  const t = s[p], m = p === "p1" ? -1 : 1, cx = 960 + t.bar.x, y = t.bar.y, c = CAL[p];
+  const g = { cx, y, m,
+    inner: { x: cx + c.inner + t.inner.x, y: y + CAL.innerDy + t.inner.y },
+    num: { x: cx + c.num + t.num.x, y: y + CAL.numDy + t.num.y },
+    tag: { x: cx + c.tag + t.tag.x, y: y + CAL.tagDy + t.tag.y },
+    outer: { x: cx + c.outerEdge + t.outer.x, y: y + c.outerDy + t.outer.y } };
+  g.outerAlign = g.outer.x < cx ? "right" : "left";
+  g.tagAlign = g.tag.x < g.num.x ? "right" : "left";
+  return g;
+}
+
+// ---------- pak helpers ----------
+function readPak(u8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  if (String.fromCharCode(u8[0], u8[1], u8[2], u8[3]) !== "PACK") throw new Error("This isn't a PACK archive.");
+  const dirOff = dv.getUint32(4, true), dirLen = dv.getUint32(8, true);
+  let spr = null, frame = null;
+  for (let i = 0; i < dirLen / 256; i++) {
+    const e = dirOff + i * 256; let name = "";
+    for (let k = 0; k < 248 && u8[e + k]; k++) name += String.fromCharCode(u8[e + k]);
+    if (name.endsWith("training_timing_bar.sprbin")) spr = dv.getUint32(e + 248, true);
+    if (name.endsWith("training_timing_bar~frames~frame.munged")) frame = { dirEntry: e, off: dv.getUint32(e + 248, true), len: dv.getUint32(e + 252, true) };
+  }
+  if (spr === null || !frame) throw new Error("This pak isn't the training timing bar pak.");
+  return { spr, frame };
+}
+function Fr(rec) {
+  const dv = new DataView(rec.buffer, rec.byteOffset, 44);
+  return [dv.getUint16(0, true), dv.getInt32(2, true), dv.getInt32(6, true), dv.getInt32(10, true),
+          dv.getUint16(14, true), dv.getUint16(16, true), dv.getUint16(18, true)];
+}
+const F = (u8, o) => Fr(u8.subarray(sprOff + o, sprOff + o + 44));
+function R(o) {                     // shipped record at script offset o
+  if (o >= 0x4149 && o < 0x4c75) return SPAWNED.slice(o - 0x4149, o - 0x4149 + 44);
+  if (o >= 0x50c9 && o < 0x5515) return FRAMEREG.slice(o - 0x50c9, o - 0x50c9 + 44);
+  return base.slice(sprOff + o, sprOff + o + 44);
+}
+function build(f) {
+  const b = new Uint8Array(44), dv = new DataView(b.buffer);
+  dv.setUint16(0, f[0], true); dv.setInt32(2, f[1] | 0, true); dv.setInt32(6, f[2] | 0, true); dv.setInt32(10, f[3] | 0, true);
+  dv.setUint16(14, f[4], true); dv.setUint16(16, f[5], true); dv.setUint16(18, f[6], true);
+  return b;
+}
+const withA = (rec, a) => { const f = Fr(rec); f[1] = a; return build(f); };
+function i32(x) { x = Math.round(x); if (x > 2147483647 || x < -2147483648) throw new Error("A value is out of range."); return x; }
+const half = x => Math.round(x * 2) / 2;
+const eq = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+// record builders
+const set = (v, varId) => build([0, i32(v), NONE, varId, IMM, SELF, SELF]);                 // own var = constant
+const copyToChild = (varId, childVar) => build([0, varId, NONE, childVar, SELF, SELF, CHILD]); // child var = own var
+const isSide = a => build([64, 31, a, NONE, SELF, IMM, SELF]);                               // Var8 == player slot
+const ALWAYS = build([228, 31, NONE, NONE, SELF, SELF, SELF]), NEVER = build([64, 31, 0x7fff0000, NONE, SELF, IMM, SELF]);
+const OR = () => R(0x43dd);
+const NOOP = build([0, 0, NONE, 12, IMM, SELF, SELF]);
+const hdr = (body, conds) => build([86, body, 0, conds, SELF, SELF, SELF]);
+function sideConds(p1, p2) {        // 3-record condition: which sides this applies to (P3/P4 follow P1/P2)
+  if (p1 && p2) return [ALWAYS, OR(), ALWAYS];
+  if (p1) return [isSide(2048), OR(), isSide(6144)];
+  if (p2) return [isSide(4096), OR(), isSide(8192)];
+  return [NEVER, OR(), NEVER];
+}
+
+function detect(u8) {
+  const shipped = [[0xd775d, 1, -921600], [0xd7839, 1, 921600], [0xd78e9, 2, 4096], [0xd7915, 1, -921600],
+                   [0xd796d, 2, 6144], [0xd79f1, 1, -880640], [0x6fd0, 1, -102400], [0x6e44, 3, 31], [0x50c9, 1, 1536]];
+  if (shipped.every(([o, i, v]) => F(u8, o)[i] === v) && F(u8, 0x4175)[0] === 92) return "original";
+  const f = F(u8, 0x6e44);
+  if (f[0] === 0 && f[1] === V.nX && f[4] === PARENT && f[3] === 141) return "v3";
+  if (f[0] === 26 && F(u8, 0x6fd0)[0] === 23 && F(u8, 0x45ed)[0] === 26 && F(u8, 0x48ad)[0] === 228 && F(u8, 0xd775d)[1] === -F(u8, 0xd7839)[1]) return "v1";
+  return "unknown";
+}
+function shownBy(u8, o) {           // read a sideConds() triple back
+  const a = F(u8, o), b = F(u8, o + 88);
+  const val = f => f[0] === 228 ? "all" : f[0] === 64 && f[2] === 0x7fff0000 ? "none" : f[0] === 64 ? f[2] : "?";
+  const x = val(a);
+  return x === "all" ? [true, true] : x === "none" ? [false, false] : x === 2048 ? [true, false] : x === 4096 ? [false, true] : [true, true];
+}
+function readV3(u8) {
+  const s = { noBox: eq(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len), FRAME_NOBOX), p1: {}, p2: {} };
+  const rows = { p1: F(u8, 0xd7915)[1] / PX, p2: F(u8, 0xd79f1)[1] / PX };
+  const xs = { p1: F(u8, 0xd775d)[1] / PX, p2: F(u8, 0xd7839)[1] / PX };
+  ["p1", "p2"].forEach((p, i) => {
+    const o = 0x4149 + i * 13 * 44 + 4 * 44, val = k => F(u8, o + k * 44)[1] / PX;   // body after hdr + 3 conds
+    const t = s[p];
+    t.bar = { x: half(xs[p]), y: half(rowY(rows[p])) };
+    const hid = v => v <= OFFSCREEN + 1;
+    const el = (vx, vy, flip) => ({ on: !hid(vy), x: half(vx), y: hid(vy) ? 0 : half(flip ? -vy : 5 - vy) });
+    t.inner = el(val(0), val(1)); t.num = el(val(2), val(3), true); t.outer = el(val(4), val(5)); t.tag = el(val(6), val(7));
+    t.outline = { on: F(u8, o + 8 * 44)[1] !== 0 };
+  });
+  return s;
+}
+function readV1(u8) {               // version 6/7 builds -> per-side values
+  const a = F(u8, 0xd7839)[1], ROW1 = F(u8, 0xd7915)[1] / PX, ROW2 = F(u8, 0xd79f1)[1] / PX;
+  const y1 = rowY(ROW1), y2 = rowY(ROW2), spread = a > 2 ? a / PX : 0;
+  const numX = F(u8, 0x6e44)[2] * a / (PX * PX), numUp = F(u8, 0x6fd0)[1] / PX - ROW1 + 29;
+  const tagX = F(u8, 0x45ed)[2] * a / (PX * PX), tagUp = F(u8, 0x45c1)[1] / PX - ROW1 - 5;
+  const outerUp = F(u8, 0x4301)[1] / PX - 30, outerOn = F(u8, 0x4175)[0] === 92, tagOn = F(u8, 0x448d)[0] === 92;
+  const gap = y2 - y1;
+  return { noBox: eq(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len), FRAME_NOBOX),
+    p1: side(-spread, half(y1), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(-numX), y: half(25 - numUp) }, tag: { on: tagOn, x: Math.round(-tagX), y: half(-tagUp) } }),
+    p2: side(spread, half(y2), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(numX), y: half(25 - numUp - gap) }, tag: { on: tagOn, x: Math.round(tagX), y: half(-tagUp - gap) } }) };
+}
+
+// ---------- the patch ----------
+function patch() {
+  const p = base.slice();
+  const W = (o, rec) => p.set(rec, sprOff + o);
+  const setField = (o, i, v) => { const f = Fr(R(o)); f[i] = i32(v); W(o, build(f)); };
+  const P1 = S.p1, P2 = S.p2;
+
+  // bar placement (HUD_TrainingInfo / PlayerData): X per side, rows split P1/P3 and P2/P4
+  setField(0xd775d, 1, P1.bar.x * PX); setField(0xd7839, 1, P2.bar.x * PX);
+  setField(0xd78e9, 2, 6144); setField(0xd7915, 1, rowFromY(P1.bar.y) * PX);
+  setField(0xd796d, 2, 4096); setField(0xd79f1, 1, rowFromY(P2.bar.y) * PX);
+
+  // "Spawned" region (0x4149, 65 records): per-side setup, outer label, number tag, padding
+  const out = [];
+  [["p1", 2048, 6144], ["p2", 4096, 8192]].forEach(([k, a, b]) => {
+    const t = S[k];
+    out.push(hdr(9, 3), isSide(a), OR(), isSide(b),
+      set(t.inner.x * PX, V.ilX), set((t.inner.on ? 5 - t.inner.y : OFFSCREEN) * PX, V.ilY),
+      set(t.num.x * PX, V.nX), set((t.num.on ? -t.num.y : OFFSCREEN) * PX, V.nY),
+      set(t.outer.x * PX, V.olX), set((t.outer.on ? 5 - t.outer.y : OFFSCREEN) * PX, V.olY),
+      set(t.tag.x * PX, V.tX), set((t.tag.on ? 5 - t.tag.y : OFFSCREEN) * PX, V.tY),
+      set(t.outline.on ? 1536 : 0, V.alpha));
+  });
+  const g1 = geo(S, "p1"), g2 = geo(S, "p2");
+  const growNest = (l1, l2) => [build([86, 1, 0, 3, SELF, SELF, SELF]), ...sideConds(l1, l2), R(0x4435)];
+  const label = (attach, vx, vy, left1, left2) => [hdr(15, 1), R(0x5255),
+    R(0x5281), R(0x52ad), attach, R(0x5305), R(0x5331), R(0x535d),
+    copyToChild(vy, 142), copyToChild(vx, 141), ...growNest(left1, left2), R(0x54bd), R(0x54e9)];
+  out.push(...label(withA(R(0x52d9), Fr(R(0x42d5))[1]), V.olX, V.olY, g1.outerAlign === "right", g2.outerAlign === "right"));
+  out.push(...label(R(0x52d9), V.tX, V.tY, g1.tagAlign === "right", g2.tagAlign === "right"));
+  while (out.length < 65) out.push(NOOP);
+  if (out.length !== 65) throw new Error("Layout check failed (spawn region).");
+  out.forEach((rec, i) => W(0x4149 + i * 44, rec));
+
+  // frame.ani: alpha now comes from the setup block; inner label reads its offset from the persistent vars
+  W(0x50c9, NOOP);
+  // The inner label spawns before the setup block runs, so it can't read the vars. Instead it computes
+  // offset = a + slot*b from Var8 (slot 1 = P1, 2 = P2), which gives each side its exact value.
+  const iy = k => (S[k].inner.on ? 5 - S[k].inner.y : OFFSCREEN) * PX, ix = k => S[k].inner.x * PX;
+  const lin = (v1, v2, childVar) => [build([26, 31, i32(v2 - v1), childVar, SELF, IMM, CHILD]),   // child = slot * b
+                                     build([2, i32(2 * v1 - v2), NONE, childVar, IMM, SELF, CHILD])]; // child += a
+  const inner = [hdr(15, 1), R(0x5255),
+    R(0x5281), R(0x52ad), R(0x52d9), R(0x5305), R(0x5331), R(0x535d),
+    ...lin(iy("p1"), iy("p2"), 142), ...lin(ix("p1"), ix("p2"), 141), R(0x53b5), R(0x54bd), R(0x54e9), R(0x5331), R(0x5331)];
+  if (inner.length !== 17) throw new Error("Layout check failed (inner label block).");
+  inner.forEach((rec, i) => W(0x5229 + i * 44, rec));
+
+  // bar.ani: the +/- number takes its offset from the parent frame's vars
+  W(0x6e44, build([0, V.nX, NONE, 141, PARENT, SELF, CHILD]));
+  W(0x6fd0, build([0, V.nY, NONE, 142, PARENT, SELF, CHILD]));
+
+  // frame image
+  const img = S.noBox ? FRAME_NOBOX : FRAME_SHIPPED;
+  p.fill(0, frameEntry.off, frameEntry.off + Math.max(frameEntry.len, img.length));
+  p.set(img, frameEntry.off);
+  new DataView(p.buffer).setUint32(frameEntry.dirEntry + 252, img.length, true);
+  return p;
+}
+
+// ---------- preview ----------
+const cv = document.getElementById("cv"), g = cv.getContext("2d");
+function txt(s, x, y, size, align, color, weight) {
+  g.font = (weight || 700) + " " + size + "px system-ui, 'Segoe UI', sans-serif";
+  g.textAlign = align; g.textBaseline = "middle";
+  g.lineWidth = Math.max(2, size / 7); g.strokeStyle = "rgba(0,0,0,.85)"; g.strokeText(s, x, y);
+  g.fillStyle = color; g.fillText(s, x, y);
+}
+function rrect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.fill(); }
+const COLORS = { p1: i => i < 6 ? "#3474c4" : i < 33 ? "#55b865" : i < 40 ? "#e01414" : "#3474c4", p2: i => i < 40 ? "#e14fc8" : i < 48 ? "#d8d018" : "#c4c6cc" };
+function drawSide(s, p, counters) {
+  const t = s[p], G = geo(s, p), L = G.cx + CAL.stripL, Rr = L + (CAL.segs - 1) * CAL.pitch + CAL.seg;
+  if (t.outline.on) {
+    g.fillStyle = "rgba(4,7,5,.76)";
+    const innerEnd = G.m < 0 ? G.cx + CAL.outR : G.cx + CAL.outL;
+    const outerEnd = s.noBox ? (G.m < 0 ? G.cx + CAL.outL : G.cx + CAL.outR) : (G.m < 0 ? L - 4 : Rr + 4);
+    rrect(Math.min(innerEnd, outerEnd), G.y - (CAL.outH - 1) / 2, Math.abs(outerEnd - innerEnd) + 1, CAL.outH, 2);
+    if (!s.noBox) {
+      const bx0 = G.m < 0 ? G.cx - BOX_OUT : G.cx + BOX_IN, bx1 = G.m < 0 ? G.cx - BOX_IN : G.cx + BOX_OUT;
+      rrect(bx0, G.y + BOX_TOP + 7, bx1 - bx0, BOX_BOT - BOX_TOP - 7, 2);
+    }
+  }
+  for (let i = 0; i < CAL.segs; i++) { g.fillStyle = COLORS[p](i); g.fillRect(L + i * CAL.pitch, G.y - (CAL.segH - 1) / 2, CAL.seg, CAL.segH); }
+  (p === "p1" ? [["46", 640], ["28", 981], ["7", 1066], ["22", 1324.5]] : [["50", 1073], ["8", 1175], ["13", 1324]])
+    .forEach(([s2, x]) => txt(s2, G.cx - 960 + x, G.y + CAL.countDy, 15, "center", "#ececec", 600));
+  const lab = p === "p1" ? "P1" : "P2";
+  if (t.inner.on) txt(lab, G.inner.x, G.inner.y, 12, "center", "#fff");
+  if (t.outer.on) txt(lab, G.outer.x, G.outer.y, 12, G.outerAlign, "#fff");
+  if (t.num.on) txt(p === "p1" ? "-21" : "+21", G.num.x, G.num.y, 25, "center", "#fff");
+  if (t.tag.on) txt(lab, G.tag.x, G.tag.y, 12, G.tagAlign, "#fff");
+  if (counters) {
+    const ax = G.m < 0 ? G.cx - BOX_IN - 4 : G.cx + BOX_IN + 4, al = G.m < 0 ? "right" : "left";
+    [["0", 2], ["0", 25], ["[1.00]", 48]].forEach(([s2, dy]) => txt(s2, ax, G.y + dy, 13, al, "#fff", 600));
+  }
+  return [G.cx + CAL.outL, G.cx + CAL.outR, G.num.x, G.tag.x, G.outer.x, G.inner.x, G.y, G.num.y, G.tag.y];
+}
+function draw() {
+  const s = view === "file" && fileS ? fileS : S, counters = view === "file" && fileKind === "original";
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 1080);
+  const pass = () => {
+    const grad = g.createLinearGradient(0, 0, 0, 1080); grad.addColorStop(0, "#5d6b4d"); grad.addColorStop(1, "#2f3a2c");
+    g.fillStyle = grad; g.fillRect(0, 0, 1920, 1080);
+    if (bgImg) { g.globalAlpha = UI.bgAlpha; g.drawImage(bgImg, 0, 0, 1920, 1080); g.globalAlpha = 1; }
+    const b = [...drawSide(s, "p1", counters), ...drawSide(s, "p2", counters)];
+    const py = 1030;
+    [["≡", 724], ["X", 854], ["Y", 900], ["RB", 946], ["A", 992]].forEach(([t, x]) => {
+      g.fillStyle = "rgba(20,22,26,.85)"; g.beginPath(); g.arc(x, py, 17, 0, Math.PI * 2); g.fill();
+      txt(t, x, py, t === "RB" ? 10 : 16, "center", "#d8d8d8");
+    });
+    txt("PAUSE", 750, py, 22, "left", "#efe6d0", 500); txt("(HOLD ALL) RESET", 1016, py, 22, "left", "#efe6d0", 500);
+    return b;
+  };
+  const b = pass();
+  if (UI.zoom) {
+    const xs = [b[0], b[1], b[2], b[3], b[4], b[5], b[9], b[10], b[11], b[12], b[13], b[14]], ys = [b[6], b[7], b[8], b[15], b[16], b[17]];
+    const x0 = Math.max(0, Math.min(...xs) - 60), x1 = Math.min(1920, Math.max(...xs) + 60);
+    const yc = (Math.min(...ys) + Math.max(...ys)) / 2, w = Math.max(400, x1 - x0), h = w * 1080 / 1920;
+    const top = Math.min(Math.max(yc - h * 0.5, 0), 1080 - h), sc = 1920 / w;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 1080);
+    g.setTransform(sc, 0, 0, sc, -x0 * sc, -top * sc); pass();
+  }
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const groups = $("groups");
+function makeNum(p, el, f) {
+  const [key, label, min, max] = f, id = p + "_" + el.key + "_" + key;
+  const w = document.createElement("div"); w.className = "ctl";
+  w.innerHTML = '<div class="lab"><span>' + label + '</span><input type="number" step="0.5" id="' + id + 'n"></div>' +
+    '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="0.5">' +
+    '<div class="nudge">' + [-10, -1, -0.5, 0.5, 1, 10].map(d => '<button data-d="' + d + '">' + (d > 0 ? "+" : "−") + Math.abs(d) + '</button>').join("") + '</div>';
+  const apply = v => {
+    if (isNaN(v)) return;
+    v = Math.round(v * 2) / 2;
+    if (UI.simple && p === "p1") { const d = v - S.p1[el.key][key]; S.p2[el.key][key] = Math.round((S.p2[el.key][key] + (key === "x" ? -d : d)) * 2) / 2; }
+    S[p][el.key][key] = v; changed();
+  };
+  w.querySelector("#" + id).addEventListener("input", e => apply(parseFloat(e.target.value)));
+  w.querySelector("#" + id + "n").addEventListener("change", e => apply(parseFloat(e.target.value)));
+  w.querySelectorAll(".nudge button").forEach(btn => btn.addEventListener("click", () => apply(S[p][el.key][key] + parseFloat(btn.dataset.d))));
+  return w;
+}
+ELEMENTS.forEach(el => {
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = "<h2>" + el.name + '<button class="link" data-copy="' + el.key + '" title="Copy P1 to P2, mirroring X">P1 → P2 (mirror X)</button></h2>';
+  const sides = document.createElement("div"); sides.className = "sides";
+  ["p1", "p2"].forEach(p => {
+    const col = document.createElement("div"); col.className = "side " + p; col.id = p + "_" + el.key;
+    const h = document.createElement("h3");
+    h.innerHTML = '<span class="tag">' + p.toUpperCase() + "</span>" + (el.show ? '<label class="check" style="margin:0"><input type="checkbox" id="' + p + "_" + el.key + '_on"> show</label>' : "");
+    col.appendChild(h);
+    el.fields.forEach(f => col.appendChild(makeNum(p, el, f)));
+    if (el.show) h.querySelector("input").addEventListener("change", e => { S[p][el.key].on = e.target.checked; if (UI.simple && p === "p1") S.p2[el.key].on = e.target.checked; changed(); });
+    sides.appendChild(col);
+  });
+  card.appendChild(sides); groups.appendChild(card);
+  card.querySelector("[data-copy]").addEventListener("click", () => {
+    const a = clone(S.p1[el.key]); if ("x" in a) a.x = -a.x;
+    if (el.key === "bar") a.y = S.p2.bar.y;
+    S.p2[el.key] = a; changed();
+  });
+});
+function syncUI() {
+  $("controls").classList.toggle("simple", UI.simple); $("simple").checked = UI.simple;
+  document.querySelectorAll(".side.p1 h3 .tag").forEach(t => t.textContent = UI.simple ? "BOTH" : "P1");
+  ["p1", "p2"].forEach(p => ELEMENTS.forEach(el => {
+    el.fields.forEach(([k]) => { const id = p + "_" + el.key + "_" + k; $(id).value = S[p][el.key][k]; $(id + "n").value = S[p][el.key][k]; });
+    if (el.show) { $(p + "_" + el.key + "_on").checked = S[p][el.key].on; }
+    const col = $(p + "_" + el.key);
+    col.querySelectorAll(".ctl").forEach(c => c.classList.toggle("dis", el.show && !S[p][el.key].on));
+  }));
+  $("noBox").checked = S.noBox;
+  $("vFile").disabled = !fileKind; $("revert").disabled = !fileKind;
+  $("vFile").classList.toggle("on", view === "file"); $("vEdit").classList.toggle("on", view === "edit");
+  $("viewNote").textContent = view === "file"
+    ? (fileKind === "original" ? "Showing the loaded file as the game ships it (with its counters, which can't be kept once you save)." : "Showing the loaded file.")
+    : (fileKind ? "Showing your edits. This is what Download writes." : "Showing the recommended layout. Load a pak to start from its layout.");
+}
+function changed() { view = "edit"; syncUI(); draw(); table(); }
+$("simple").addEventListener("change", e => { UI.simple = e.target.checked; try { localStorage.setItem("framebar-simple", UI.simple ? "1" : "0"); } catch (err) {} syncUI(); });
+$("noBox").addEventListener("change", e => { S.noBox = e.target.checked; changed(); });
+$("pRec").addEventListener("click", () => { S = PRESETS.recommended(); changed(); });
+$("pShip").addEventListener("click", () => { S = PRESETS.shipped(); changed(); });
+$("revert").addEventListener("click", () => { S = clone(fileS); changed(); });
+$("vFile").addEventListener("click", () => { view = "file"; syncUI(); draw(); });
+$("vEdit").addEventListener("click", () => { view = "edit"; syncUI(); draw(); });
+$("zoom").addEventListener("change", e => { UI.zoom = e.target.checked; draw(); });
+$("bgAlpha").addEventListener("input", e => { UI.bgAlpha = e.target.value / 100; draw(); });
+$("bgBtn").addEventListener("click", () => $("bgFile").click());
+$("bgFile").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { bgImg = img; draw(); }; img.src = URL.createObjectURL(f); });
+function table() {
+  const tb = document.querySelector("#vals tbody"); tb.innerHTML = "";
+  const add = c => { const tr = document.createElement("tr"); c.forEach(x => { const td = document.createElement("td"); td.textContent = x; tr.appendChild(td); }); tb.appendChild(tr); return tr; };
+  const f = (p, el) => { const t = S[p][el]; return (t.on === false ? "hidden" : ("x " + t.x + ", y " + t.y)); };
+  add(["Bar (X, row y)", "x " + S.p1.bar.x + ", y " + S.p1.bar.y, "x " + S.p2.bar.x + ", y " + S.p2.bar.y]);
+  add(["Outline", S.p1.outline.on ? "shown" : "hidden", S.p2.outline.on ? "shown" : "hidden"]);
+  [["inner", "Inner label"], ["outer", "Outer label"], ["num", "+/− number"], ["tag", "Number tag"]].forEach(([k, n]) => add([n, f("p1", k), f("p2", k)]));
+  add(["Counter box", S.noBox ? "removed" : "shown", S.noBox ? "removed" : "shown"]);
+  if (base) { try { patch(); } catch (err) { add([err.message, "", ""]).style.color = "var(--bad)"; } }
+}
+async function sha256(u8) { if (!(window.crypto && crypto.subtle)) return null; return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", u8))).map(b => b.toString(16).padStart(2, "0")).join(""); }
+async function load(file) {
+  const st = $("status");
+  try {
+    const u8 = new Uint8Array(await file.arrayBuffer());
+    const info = readPak(u8); sprOff = info.spr; frameEntry = info.frame;
+    const kind = detect(u8);
+    if (kind === "unknown") { st.className = "status bad"; st.textContent = "This pak was changed by something other than this editor (an older test build, or a game update). Load training_timing_bar.pak.bak instead."; return; }
+    base = u8; fileKind = kind;
+    if (kind === "original") {
+      fileS = PRESETS.shipped();
+      const h = await sha256(u8);
+      st.className = h && h !== ORIGINAL_SHA256 ? "status warn" : "status ok";
+      st.textContent = h && h !== ORIGINAL_SHA256 ? "Loaded " + file.name + ": shipped layout, but not the exact file this editor was built against. Check the result in game." : "Loaded " + file.name + ": the game's original layout.";
+    } else {
+      fileS = kind === "v3" ? readV3(u8) : readV1(u8);
+      st.className = "status ok"; st.textContent = "Loaded " + file.name + ": a patched layout" + (kind === "v1" ? " (from an earlier build of this editor)" : "") + ". The controls show its values.";
+    }
+    S = clone(fileS); view = "edit"; $("save").disabled = false; syncUI(); draw(); table();
+  } catch (err) { st.className = "status bad"; st.textContent = err.message; }
+}
+const drop = $("drop");
+drop.addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", e => { if (e.target.files[0]) load(e.target.files[0]); e.target.value = ""; });
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("hot"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("hot"); }));
+drop.addEventListener("drop", e => e.dataTransfer.files[0] && load(e.dataTransfer.files[0]));
+$("save").addEventListener("click", () => {
+  try {
+    const bytes = patch(), a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
+    a.download = "training_timing_bar.pak"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (err) { $("status").className = "status bad"; $("status").textContent = err.message; }
+});
+syncUI(); draw(); table();
+})();
+</script>
+</body>
+</html>
