@@ -5,10 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Frame Bar Editor</title>
 <style>
-:root{
+:root, :root[data-theme="dark"]{
+  --preview:#2b3038;
   --bg:#14161a; --panel:#1d2026; --panel2:#252931; --line:#343a44; --text:#e8eaed; --muted:#9aa0a8;
-  --accent:#e07a3f; --p1:#e2763c; --p2:#4a8fe0; --ok:#5fbf7a; --warn:#e0b84a; --bad:#e05a5a;
+  --accent:#e07a3f; --on-accent:#1a0f08; --p1:#e2763c; --p2:#4a8fe0; --on-p2:#08111c; --ok:#5fbf7a; --warn:#e0b84a; --bad:#e05a5a;
+  color-scheme:dark;
 }
+:root[data-theme="earth"]{
+  --preview:#4a4129;
+  --bg:#17150f; --panel:#211e15; --panel2:#2b271c; --line:#463f2c; --text:#eee7d4; --muted:#b0a585;
+  --accent:#7fb542; --on-accent:#121a08; --p1:#e0903f; --p2:#5aa0d8; --on-p2:#07121b; --ok:#8cc85a; --warn:#d9b44a; --bad:#e06650;
+  color-scheme:dark;
+}
+:root[data-theme="water"]{
+  --preview:#15384f;
+  --bg:#08141f; --panel:#0e1e2d; --panel2:#15283b; --line:#23405b; --text:#e1eef8; --muted:#8eafc7;
+  --accent:#3aa8f0; --on-accent:#04121d; --p1:#f39a52; --p2:#7cc6ff; --on-p2:#04121d; --ok:#5fd0a0; --warn:#f0c45a; --bad:#ff6f6f;
+  color-scheme:dark;
+}
+:root[data-theme="fire"]{
+  --preview:#43180f;
+  --bg:#190c0a; --panel:#241210; --panel2:#301816; --line:#532823; --text:#f7e6e1; --muted:#c79b92;
+  --accent:#ff5a2a; --on-accent:#1e0602; --p1:#ff9b45; --p2:#5ea8ef; --on-p2:#061321; --ok:#6fd08a; --warn:#ffc24a; --bad:#ff6a5a;
+  color-scheme:dark;
+}
+:root[data-theme="air"]{
+  --preview:#c9b98f;
+  --bg:#f6f1e6; --panel:#fffcf5; --panel2:#f0e9d8; --line:#ddd0b2; --text:#2a2317; --muted:#776a52;
+  --accent:#e39a2f; --on-accent:#2a1700; --p1:#c9601f; --p2:#2f78c4; --on-p2:#ffffff; --ok:#3d8f45; --warn:#9a6a00; --bad:#c23a2f;
+  color-scheme:light;
+}
+.themes{margin-left:auto;display:flex;gap:6px;align-items:center}
+.themes .lbl{font-size:12px;color:var(--muted);margin-right:2px}
+.swatch{width:26px;height:26px;border-radius:50%;padding:0;border:2px solid var(--line);cursor:pointer;position:relative;overflow:hidden}
+.swatch.on{outline:2px solid var(--accent);outline-offset:2px}
+.swatch span{position:absolute;inset:0;display:block}
+.picker{display:inline-flex;align-items:center;gap:8px;padding:4px 6px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);cursor:pointer;font-size:12px;color:var(--text);transition:border-color .15s}
+.picker:hover{border-color:var(--accent)}
+.picker input[type=color]{-webkit-appearance:none;appearance:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.picker input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.picker input[type=color]::-webkit-color-swatch{border:2px solid rgba(255,255,255,.35);border-radius:50%}
+.picker input[type=color]::-moz-color-swatch{border:2px solid rgba(255,255,255,.35);border-radius:50%}
+.picker code{background:none;padding:0;font-size:12px;letter-spacing:.02em;text-transform:uppercase}
+.picker .reset{border:0;background:none;padding:0 2px;color:var(--muted);font-size:14px;line-height:1;cursor:pointer}
+.picker .reset:hover{color:var(--accent)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
@@ -19,6 +59,26 @@ main{display:grid;grid-template-columns:minmax(420px,520px) 1fr;gap:16px;padding
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
 .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .stack>*+*{margin-top:14px}
+#groups{display:flex;flex-direction:column;gap:14px}
+.card h2 .acts{display:flex;gap:10px;align-items:center;text-transform:none;letter-spacing:0;font-weight:400;flex-shrink:0;white-space:nowrap}
+.card h2 .acts .check{margin:0;font-size:12px;color:var(--text)}
+.card h2 .acts button{padding:5px 10px;font-size:12px}
+.gridbar{margin-top:8px;font-size:13px}
+.gridbar .mini{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.gridbar input[type=number]{width:76px;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 4px 4px 8px;font:inherit;font-size:13px;text-align:left}
+.gridbar .sep{width:1px;height:20px;background:var(--line)}
+.zoomctl{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.zoomctl input[type=range]{width:120px;accent-color:var(--accent)}
+.zoomctl code{min-width:34px;text-align:right;background:none;padding:0}
+#zoomFit{padding:5px 10px;font-size:12px}
+#cv{cursor:default;touch-action:none}
+#cv.pannable{cursor:grab}
+#cv.panning{cursor:grabbing}
+.guides{margin-left:auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.guide{display:inline-flex;align-items:center;gap:8px;font-size:13px}
+.guide input[type=range]{width:150px;accent-color:var(--accent)}
+.guide input[type=range]:disabled{opacity:.4}
+.guide code{min-width:52px;text-align:right;background:none;padding:0;font-size:12px;color:var(--muted)}
 .sticky{position:sticky;top:12px}
 .sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .side{border-top:3px solid var(--p1);padding-top:8px}
@@ -28,13 +88,14 @@ main{display:grid;grid-template-columns:minmax(420px,520px) 1fr;gap:16px;padding
 .side.p1 h3 .tag{color:var(--p1)} .side.p2 h3 .tag{color:var(--p2)}
 .ctl{margin:6px 0 10px}
 .ctl .lab{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:3px}
-.ctl input[type=number]{width:72px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:13px;text-align:right}
+.ctl input[type=number]{width:96px;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 4px 4px 8px;font:inherit;font-size:13px;line-height:18px;text-align:left;font-variant-numeric:tabular-nums}
+.ctl input[type=number]::-webkit-inner-spin-button{margin-left:6px;height:18px}
 .ctl input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 .nudge{display:flex;gap:4px}
 .nudge button{flex:1;padding:2px 0;font-size:12px;border-radius:6px}
 .check{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13px}
 button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font:inherit;cursor:pointer}
-button.primary{background:var(--accent);border-color:var(--accent);color:#1a0f08;font-weight:650}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:650}
 button:disabled{opacity:.45;cursor:not-allowed}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .drop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);cursor:pointer}
@@ -43,7 +104,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .status.ok{color:var(--ok)} .status.bad{color:var(--bad)} .status.warn{color:var(--warn)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:0;border-radius:0;padding:6px 10px}
-.seg button.on{background:var(--p2);color:#08111c;font-weight:650}
+.seg button.on{background:var(--p2);color:var(--on-p2);font-weight:650}
 canvas{width:100%;height:auto;display:block;border-radius:8px;background:#0b0c0e;margin-top:10px}
 table{width:100%;border-collapse:collapse;font-size:12px;font-family:ui-monospace,Consolas,monospace}
 td,th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
@@ -51,15 +112,29 @@ th{color:var(--muted);font-weight:500}
 .note{color:var(--muted);font-size:12px;margin:6px 0 0}
 code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--panel2);padding:1px 4px;border-radius:4px}
 .dis{opacity:.4;pointer-events:none}
+.rimrow{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.rimrow .check{margin:0}
+.rimrow .rimsize{display:inline-flex;align-items:center;gap:8px;font-size:13px;flex:1;min-width:180px}
+.rimrow .rimsize input[type=range]{flex:1;accent-color:var(--accent)}
+.rimrow .rimsize code{min-width:40px;text-align:right;background:none;padding:0;color:var(--muted)}
+.rimrow .note{flex-basis:100%;margin:0}
 .simple .side.p2{display:none}
 .simple .sides{grid-template-columns:1fr}
-.simple [data-copy]{display:none}
+.simple .link-opt{display:none}
 </style>
 </head>
 <body>
 <header>
   <h1>Frame Bar Editor</h1>
   <span class="sub">Avatar Legends: training-mode framedata bars &middot; edits <code>training_timing_bar.pak</code></span>
+  <div class="themes" role="group" aria-label="Colour theme">
+    <span class="lbl">Theme</span>
+    <button class="swatch" data-theme="dark" title="Dark"><span style="background:linear-gradient(135deg,#14161a 50%,#e07a3f 50%)"></span></button>
+    <button class="swatch" data-theme="earth" title="Earth"><span style="background:linear-gradient(135deg,#211e15 50%,#7fb542 50%)"></span></button>
+    <button class="swatch" data-theme="water" title="Water"><span style="background:linear-gradient(135deg,#0e1e2d 50%,#3aa8f0 50%)"></span></button>
+    <button class="swatch" data-theme="fire" title="Fire"><span style="background:linear-gradient(135deg,#241210 50%,#ff5a2a 50%)"></span></button>
+    <button class="swatch" data-theme="air" title="Air"><span style="background:linear-gradient(135deg,#fffcf5 50%,#e39a2f 50%)"></span></button>
+  </div>
 </header>
 <main>
   <div class="stack" id="controls">
@@ -79,7 +154,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
       </div>
       <div class="check"><input id="simple" type="checkbox"><label for="simple"><b>Simple edit</b>: one set of controls; P2 follows P1 with X mirrored</label></div>
       <div class="check"><input id="noBox" type="checkbox"><label for="noBox">Remove the counter box (both sides share one image)</label></div>
-      <p class="note">Put the download in <code>data_packages</code> as <code>training_timing_bar.pak</code>, then restart the game. X: + moves right. Y: + moves down. Element offsets are relative to where the game puts that element on its own bar.</p>
+      <p class="note">Put the download in <code>data_packages</code> as <code>training_timing_bar.pak</code>, then restart the game. <b>X</b>: + moves right, &minus; moves left. <b>Y</b>: + moves down, &minus; moves up. Element offsets are relative to where the game puts that element on its own bar.</p>
     </div>
     <div id="groups"></div>
   </div>
@@ -89,14 +164,27 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
       <div class="toolbar">
         <h2 style="margin:0">Preview (1920 &times; 1080)</h2>
         <span class="seg"><button id="vFile" disabled>Loaded file</button><button id="vEdit" class="on">Your edits</button></span>
-        <label class="check" style="margin:0"><input id="zoom" type="checkbox" checked> Zoom</label>
-        <button id="bgBtn">Screenshot background</button>
-        <input id="bgFile" type="file" accept="image/*" hidden>
-        <input id="bgAlpha" type="range" min="0" max="100" value="55" style="width:80px" title="Background opacity">
+        <label class="mini zoomctl">Zoom <input id="zoom" type="range" min="1" max="8" step="0.25" value="1"> <code id="zoomVal">1&times;</code></label><button id="zoomFit" type="button" title="Zoom to fit the bars">Fit</button>
+        <label class="picker" title="Preview background (follows the theme until you pick a colour)">
+          <input id="bgColor" type="color" value="#2b3038"><span>Background</span><code id="bgHex">#2B3038</code>
+          <button class="reset" id="bgReset" type="button" title="Match the theme again" hidden>&#x21BA;</button>
+        </label>
+      </div>
+      <div class="toolbar gridbar">
+        <label class="check" style="margin:0"><input id="gridOn" type="checkbox"> Grid</label>
+        <label class="mini">size <input id="gridSize" type="number" min="2" max="200" step="1"> px</label>
+        <span class="sep"></span>
+        <label class="check" style="margin:0" title="Show where the game draws its matchmaking banner while it searches for a match"><input id="mmOn" type="checkbox"> Searching banner</label>
+        <div class="guides">
+          <label class="guide" title="Two dashed lines, mirrored either side of the centre"><input id="guideXOn" type="checkbox"> Margin X
+            <input id="guideX" type="range" min="0" max="960" step="0.5"><code id="guideXVal"></code></label>
+          <label class="guide" title="A dashed horizontal line at this screen height"><input id="guideYOn" type="checkbox"> Line Y
+            <input id="guideY" type="range" min="0" max="1080" step="0.5"><code id="guideYVal"></code></label>
+        </div>
       </div>
       <p id="viewNote" class="note"></p>
       <canvas id="cv" width="1920" height="1080"></canvas>
-      <p class="note">Drawn from measurements of your screenshots, so expect a few pixels of difference from the game. Load a training-mode screenshot as the background to compare.</p>
+      <p class="note">Drawn from measurements of your screenshots, so expect a few pixels of difference from the game. </p>
     </div>
     <div class="card">
       <h2>Values written to the pak</h2>
@@ -122,30 +210,191 @@ function b64(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
 const hexBytes = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
 const SPAWNED = hexBytes(ORIG_SPAWNED), FRAMEREG = hexBytes(ORIG_FRAME);
 
+// ---------- frame image (.munged): 167-byte header + one LZ4 block of 1020 x 68 RGBA pixels ----------
+const IMG_W = 1020, IMG_H = 68, IMG_HDR = 167;
+const u32 = (b, o) => (b[o] | b[o + 1] << 8 | b[o + 2] << 16 | b[o + 3] << 24) >>> 0;
+function lz4Decode(src, outLen) {
+  const out = new Uint8Array(outLen); let i = 0, o = 0;
+  while (i < src.length) {
+    const tok = src[i++]; let n = tok >> 4;
+    if (n === 15) { let b; do { b = src[i++]; n += b; } while (b === 255); }
+    out.set(src.subarray(i, i + n), o); i += n; o += n;
+    if (i >= src.length) break;
+    const off = src[i] | src[i + 1] << 8; i += 2;
+    let m = tok & 15; if (m === 15) { let b; do { b = src[i++]; m += b; } while (b === 255); }
+    m += 4; for (let k = 0; k < m; k++, o++) out[o] = out[o - off];
+  }
+  if (o !== outLen) throw new Error("The frame image in this pak couldn't be read.");
+  return out;
+}
+function lz4Encode(src) {           // greedy LZ4 block encoder (valid for any LZ4 block decoder)
+  const n = src.length, out = new Uint8Array(n + Math.ceil(n / 255) + 32), tab = new Int32Array(1 << 16).fill(-1);
+  let o = 0, anchor = 0, i = 0;
+  const lenBytes = v => { while (v >= 255) { out[o++] = 255; v -= 255; } out[o++] = v; };
+  const h = p => (Math.imul(src[p] | src[p + 1] << 8 | src[p + 2] << 16 | src[p + 3] << 24, 2654435761) >>> 16);
+  const emit = (lit, mlen, off) => {
+    const L = lit, M = mlen - 4;
+    out[o++] = (Math.min(L, 15) << 4) | (mlen ? Math.min(M, 15) : 0);
+    if (L >= 15) lenBytes(L - 15);
+    out.set(src.subarray(anchor, anchor + L), o); o += L;
+    if (mlen) { out[o++] = off & 255; out[o++] = off >> 8; if (M >= 15) lenBytes(M - 15); }
+  };
+  const limit = n - 12;               // the last match must start 12+ bytes before the end
+  while (i < limit) {
+    const k = h(i), c = tab[k]; tab[k] = i;
+    if (c >= 0 && i - c <= 65535 && src[c] === src[i] && src[c + 1] === src[i + 1] && src[c + 2] === src[i + 2] && src[c + 3] === src[i + 3]) {
+      let m = 4; while (i + m < n - 5 && src[c + m] === src[i + m]) m++;
+      emit(i - anchor, m, i - c); i += m; anchor = i;
+    } else i++;
+  }
+  emit(n - anchor, 0, 0);           // final literals
+  return out.slice(0, o);
+}
+const imgPixels = munged => lz4Decode(munged.subarray(IMG_HDR), u32(munged, 159));
+function imgMunged(header, px) {    // header copied from the shipped image, sizes updated
+  const c = lz4Encode(px), out = new Uint8Array(IMG_HDR + c.length), dv = new DataView(out.buffer);
+  out.set(header.subarray(0, IMG_HDR)); out.set(c, IMG_HDR);
+  dv.setUint32(155, c.length + 8, true); dv.setUint32(159, px.length, true); dv.setUint32(163, c.length, true);
+  return out;
+}
+// Trim: colour the art's edge. size 1 = the opaque pixels touching transparency; larger sizes grow
+// inward and outward in turn (2 = 1 in + 1 out, 3 = 2 in + 1 out, ...).
+function applyRim(src, hex, size) {
+  const px = src.slice(), N = IMG_W * IMG_H, r = parseInt(hex.slice(1, 3), 16), gC = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const inD = Math.ceil(size / 2), outD = Math.floor(size / 2);
+  const dist = (opaque, depth) => {        // 4-neighbour distance (1..depth) from the other kind of pixel
+    const d = new Uint8Array(N); let front = [];
+    const isOp = i => src[i * 4 + 3] > 0;
+    for (let i = 0; i < N; i++) {
+      if (isOp(i) !== opaque) continue;
+      const x = i % IMG_W, y = (i / IMG_W) | 0;
+      const nb = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]];
+      if (nb.some(([a, c]) => a < 0 || c < 0 || a >= IMG_W || c >= IMG_H ? opaque : isOp(c * IMG_W + a) !== opaque)) { d[i] = 1; front.push(i); }
+    }
+    for (let k = 2; k <= depth; k++) {
+      const next = [];
+      front.forEach(i => { const x = i % IMG_W, y = (i / IMG_W) | 0;
+        [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(([a, c]) => {
+          if (a < 0 || c < 0 || a >= IMG_W || c >= IMG_H) return;
+          const j = c * IMG_W + a; if (!d[j] && isOp(j) === opaque) { d[j] = k; next.push(j); } }); });
+      front = next;
+    }
+    return d;
+  };
+  [[true, inD], [false, outD]].forEach(([opq, depth]) => {
+    if (depth < 1) return;
+    const d = dist(opq, depth);
+    for (let i = 0; i < N; i++) if (d[i]) { px[i * 4] = r; px[i * 4 + 1] = gC; px[i * 4 + 2] = b; px[i * 4 + 3] = 255; }
+  });
+  return px;
+}
+const BASE_PX = { nobox: null, shipped: null };
+const basePx = k => BASE_PX[k] || (BASE_PX[k] = imgPixels(k === "nobox" ? FRAME_NOBOX : FRAME_SHIPPED));
+let imgCache = { key: "", bytes: null };
+function frameImage(s) {
+  const k = s.noBox ? "nobox" : "shipped", key = k + (s.rim.on ? "|" + s.rim.color + "|" + s.rim.size : "");
+  if (imgCache.key === key) return imgCache.bytes;
+  const bytes = s.rim.on ? imgMunged(k === "nobox" ? FRAME_NOBOX : FRAME_SHIPPED, applyRim(basePx(k), s.rim.color, s.rim.size))
+                         : (k === "nobox" ? FRAME_NOBOX : FRAME_SHIPPED);
+  imgCache = { key, bytes }; return bytes;
+}
+function readImage(munged) {        // -> { noBox, rim } recovered from a pak's frame image
+  let px; try { px = imgPixels(munged); } catch (err) { return null; }
+  const same = (a, b2) => a.length === b2.length && a.every((v, i) => v === b2[i]);
+  for (const k of ["nobox", "shipped"]) {
+    const bp = basePx(k), noBox = k === "nobox";
+    if (same(px, bp)) return { noBox, rim: RIM_OFF() };
+    let first = -1; for (let i = 0; i < px.length; i += 4) if (px[i] !== bp[i] || px[i + 1] !== bp[i + 1] || px[i + 2] !== bp[i + 2] || px[i + 3] !== bp[i + 3]) { first = i; break; }
+    if (first < 0) continue;
+    const hex = "#" + [px[first], px[first + 1], px[first + 2]].map(v => v.toString(16).padStart(2, "0")).join("");
+    for (let sz = 1; sz <= 8; sz++) if (same(applyRim(bp, hex, sz), px)) return { noBox, rim: { on: true, color: hex, size: sz } };
+  }
+  return null;
+}
+
 // ---------- settings model ----------
 const ELEMENTS = [
   { key: "bar", name: "Bar", show: false, fields: [["x", "X (from screen centre)", -960, 960], ["y", "Row height (screen y)", 600, 1080]] },
-  { key: "outline", name: "Outline", show: true, fields: [] },
-  { key: "inner", name: "Inner label (P1/P2 at the inner end)", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
-  { key: "outer", name: "Outer label (P1/P2 at the outer end)", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
-  { key: "num", name: "+/− number", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
-  { key: "tag", name: "Number tag (P1/P2 beside the number)", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] }
+  { key: "outline", name: "Outline", show: true, noSnap: true, rim: true,
+    fields: [["op", "Opacity (%)", 0, 100, { step: 1, nudges: [-10, -5, -1, 1, 5, 10] }]] },
+  { key: "counts", name: "Frame counts", show: false, fields: [], checks: [["raised", "Raise above the strip"]] },
+  { key: "inner", name: "Inner label", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "outer", name: "Outer label", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "num", name: "Frame advantage", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "tag", name: "P1/P2 beside the frame advantage", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] }
 ];
-const side = (bx, by, o) => ({ bar: { x: bx, y: by }, outline: { on: true }, inner: { on: true, x: 0, y: 0 }, outer: o.outer, num: o.num, tag: o.tag });
+const SHIPPED_OP = 75;                                   // the game's own outline alpha (1536 / 2048)
+const side = (bx, by, o) => ({ bar: { x: bx, y: by }, outline: { on: true, op: SHIPPED_OP }, counts: { raised: false },
+  inner: { on: true, x: 0, y: 0 }, outer: o.outer, num: o.num, tag: o.tag });
+const RIM_OFF = () => ({ on: false, color: "#c9a862", size: 1 });
+function normalise(s) {             // fill in settings that older saves don't have
+  ["p1", "p2"].forEach(p => {
+    const t = s[p];
+    t.outline = Object.assign({ on: true, op: SHIPPED_OP }, t.outline);
+    t.counts = Object.assign({ raised: false }, t.counts);
+  });
+  s.rim = Object.assign(RIM_OFF(), s.rim);
+  return s;
+}
 const PRESETS = {
-  shipped: () => ({ noBox: false,
+  shipped: () => ({ noBox: false, rim: RIM_OFF(),
     p1: side(-450, 991, { outer: { on: false, x: 0, y: 0 }, num: { on: true, x: 0, y: 0 }, tag: { on: false, x: 0, y: 0 } }),
     p2: side(450, 991, { outer: { on: false, x: 0, y: 0 }, num: { on: true, x: 0, y: 0 }, tag: { on: false, x: 0, y: 0 } }) }),
-  recommended: () => { const r = { noBox: true,
+  recommended: () => { const r = { noBox: true, rim: { on: true, color: "#c9a862", size: 1 },
     p1: side(0, 920.5, { outer: { on: true, x: 0, y: -25 }, num: { on: true, x: -865, y: 41.5 }, tag: { on: true, x: -892, y: 19.5 } }),
     p2: side(0, 953.5, { outer: { on: true, x: 0, y: -25 }, num: { on: true, x: 865, y: 8.5 }, tag: { on: true, x: 892, y: -13.5 } }) };
     r.p1.inner = { on: true, x: -10, y: 4 }; r.p2.inner = { on: true, x: 11, y: 4 };   // line up with the outer labels on each end
+    r.p1.outline.op = r.p2.outline.op = 85;
     return r; }
 };
 const clone = o => JSON.parse(JSON.stringify(o));
-let S = PRESETS.recommended(), fileS = null, fileKind = null, view = "edit";
-let base = null, sprOff = 0, frameEntry = null, bgImg = null;
-const UI = { zoom: true, bgAlpha: 0.55, simple: false };
+let S = PRESETS.shipped(), fileS = null, fileKind = null, view = "default";   // "default" = untouched start-up view
+let base = null, sprOff = 0, frameEntry = null;
+const UI = { zoom: 1, panX: 0, panY: 0, bg: null, simple: false, link: {}, snap: {},
+  grid: { on: false, size: 10, gxOn: false, gx: 400, gyOn: false, gy: 937.5, mm: false } };   // bg null = follow the theme
+try { Object.assign(UI.grid, JSON.parse(localStorage.getItem("framebar-grid") || "{}")); } catch (err) {}
+// Screen position of the thing a value moves (the bar centre, a label's anchor, the number's centre).
+function screenPos(p, key, axis) {
+  const G = geo(S, p);
+  if (key === "bar") return axis === "x" ? G.cx : G.y;
+  return G[key][axis];
+}
+function snapTargets(axis) {
+  const t = [];
+  if (axis === "x" && UI.grid.gxOn) t.push(960 - UI.grid.gx, 960 + UI.grid.gx);
+  if (axis === "y" && UI.grid.gyOn) t.push(UI.grid.gy);
+  return t;
+}
+// Snap a new value so its screen position lands on the grid or a margin line.
+// dir 0 = nearest; +1/-1 (a nudge button) = the next line in that direction.
+function snapValue(p, key, axis, v, dir) {
+  const cur = S[p][key][axis], base = screenPos(p, key, axis) - cur, pos = base + v;
+  const lines = snapTargets(axis), size = UI.grid.size;
+  if (UI.grid.on && size > 0) {
+    const from = base + cur, lo = Math.floor(Math.min(from, pos) / size) - 2, hi = Math.ceil(Math.max(from, pos) / size) + 2;
+    for (let i = lo; i <= hi; i++) lines.push(i * size);
+  }
+  if (!lines.length) return v;
+  let best;
+  if (dir) {
+    const from = base + cur;
+    const ahead = lines.filter(l => dir > 0 ? l > from + 0.01 : l < from - 0.01).sort((a, b) => dir > 0 ? a - b : b - a);
+    best = ahead.length ? ahead[0] : pos;
+  } else {
+    const guides = snapTargets(axis), near = guides.filter(l => Math.abs(l - pos) <= 8);
+    best = near.length ? near[0] : lines.reduce((a, b) => Math.abs(b - pos) < Math.abs(a - pos) ? b : a);
+  }
+  return Math.round((best - base) * 2) / 2;
+}
+const linked = key => UI.simple || !!UI.link[key];
+// Put the P1/P2 tag right beside its frame advantage number, on the side facing the bar.
+function placeTagNextToNumber(q) {
+  const G = geo(S, q), c = CAL[q], t = S[q];
+  const towardBar = G.num.x < G.cx ? 1 : -1, GAP = 24;
+  t.tag.x = Math.round((t.num.x + (c.num - c.tag) + towardBar * GAP) * 2) / 2;
+  t.tag.y = t.num.y - 22;
+}
+try { UI.bg = localStorage.getItem("framebar-bg") || null; } catch (err) {}
 try { UI.simple = localStorage.getItem("framebar-simple") === "1"; } catch (err) {}
 
 // ---------- calibrated screen model (1080p) ----------
@@ -157,7 +406,7 @@ const CAL = {
   p2: { inner: -403, tag: -403, num: -406, outerEdge: 384, outerDy: 25.5 },
   innerDy: -3.5, numDy: -27.5, tagDy: -2.5,
   stripL: -376, seg: 10, pitch: 12, segs: 63, segH: 13,
-  outL: -422, outR: 421, outH: 17, countDy: 17.5
+  outL: -422, outR: 421, outH: 17, countDy: 17.5, countRaise: 35
 };
 const BOX_IN = 382, BOX_OUT = 452, BOX_TOP = -16, BOX_BOT = 59;     // shipped counter box (approximate)
 function geo(s, p) {            // screen positions of everything on one side
@@ -240,7 +489,8 @@ function shownBy(u8, o) {           // read a sideConds() triple back
   return x === "all" ? [true, true] : x === "none" ? [false, false] : x === 2048 ? [true, false] : x === 4096 ? [false, true] : [true, true];
 }
 function readV3(u8) {
-  const s = { noBox: eq(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len), FRAME_NOBOX), p1: {}, p2: {} };
+  const im = readImage(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len)) || { noBox: true, rim: RIM_OFF() };
+  const s = { noBox: im.noBox, rim: im.rim, p1: {}, p2: {} };
   const rows = { p1: F(u8, 0xd7915)[1] / PX, p2: F(u8, 0xd79f1)[1] / PX };
   const xs = { p1: F(u8, 0xd775d)[1] / PX, p2: F(u8, 0xd7839)[1] / PX };
   ["p1", "p2"].forEach((p, i) => {
@@ -250,9 +500,12 @@ function readV3(u8) {
     const hid = v => v <= OFFSCREEN + 1;
     const el = (vx, vy, flip) => ({ on: !hid(vy), x: half(vx), y: hid(vy) ? 0 : half(flip ? -vy : 5 - vy) });
     t.inner = el(val(0), val(1)); t.num = el(val(2), val(3), true); t.outer = el(val(4), val(5)); t.tag = el(val(6), val(7));
-    t.outline = { on: F(u8, o + 8 * 44)[1] !== 0 };
+    const a = F(u8, o + 8 * 44)[1];
+    t.outline = { on: a !== 0, op: a ? Math.round(a * 100 / 2048) : SHIPPED_OP };
   });
-  return s;
+  s.p1.counts = { raised: F(u8, 0x9020)[0] === 64 && F(u8, 0x9020)[2] === 2048 };
+  s.p2.counts = { raised: F(u8, 0x9078)[0] === 64 && F(u8, 0x9078)[2] === 4096 };
+  return normalise(s);
 }
 function readV1(u8) {               // version 6/7 builds -> per-side values
   const a = F(u8, 0xd7839)[1], ROW1 = F(u8, 0xd7915)[1] / PX, ROW2 = F(u8, 0xd79f1)[1] / PX;
@@ -261,9 +514,9 @@ function readV1(u8) {               // version 6/7 builds -> per-side values
   const tagX = F(u8, 0x45ed)[2] * a / (PX * PX), tagUp = F(u8, 0x45c1)[1] / PX - ROW1 - 5;
   const outerUp = F(u8, 0x4301)[1] / PX - 30, outerOn = F(u8, 0x4175)[0] === 92, tagOn = F(u8, 0x448d)[0] === 92;
   const gap = y2 - y1;
-  return { noBox: eq(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len), FRAME_NOBOX),
+  return normalise({ noBox: eq(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len), FRAME_NOBOX),
     p1: side(-spread, half(y1), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(-numX), y: half(25 - numUp) }, tag: { on: tagOn, x: Math.round(-tagX), y: half(-tagUp) } }),
-    p2: side(spread, half(y2), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(numX), y: half(25 - numUp - gap) }, tag: { on: tagOn, x: Math.round(tagX), y: half(-tagUp - gap) } }) };
+    p2: side(spread, half(y2), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(numX), y: half(25 - numUp - gap) }, tag: { on: tagOn, x: Math.round(tagX), y: half(-tagUp - gap) } }) });
 }
 
 // ---------- the patch ----------
@@ -287,7 +540,7 @@ function patch() {
       set(t.num.x * PX, V.nX), set((t.num.on ? -t.num.y : OFFSCREEN) * PX, V.nY),
       set(t.outer.x * PX, V.olX), set((t.outer.on ? 5 - t.outer.y : OFFSCREEN) * PX, V.olY),
       set(t.tag.x * PX, V.tX), set((t.tag.on ? 5 - t.tag.y : OFFSCREEN) * PX, V.tY),
-      set(t.outline.on ? 1536 : 0, V.alpha));
+      set(t.outline.on ? Math.round(t.outline.op * 2048 / 100) : 0, V.alpha));
   });
   const g1 = geo(S, "p1"), g2 = geo(S, "p2");
   const growNest = (l1, l2) => [build([86, 1, 0, 3, SELF, SELF, SELF]), ...sideConds(l1, l2), R(0x4435)];
@@ -317,12 +570,36 @@ function patch() {
   W(0x6e44, build([0, V.nX, NONE, 141, PARENT, SELF, CHILD]));
   W(0x6fd0, build([0, V.nY, NONE, 142, PARENT, SELF, CHILD]));
 
-  // frame image
-  const img = S.noBox ? FRAME_NOBOX : FRAME_SHIPPED;
-  p.fill(0, frameEntry.off, frameEntry.off + Math.max(frameEntry.len, img.length));
-  p.set(img, frameEntry.off);
-  new DataView(p.buffer).setUint32(frameEntry.dirEntry + 252, img.length, true);
-  return p;
+  // frame counts: the game raises a bar's counts 35 px only for P3/P4; the toggle extends that to P1 or P2.
+  // The FrameTimingNumber flag makes the game place the counts itself, so it's swapped for a harmless
+  // duplicate of the MonoSpace flag whenever a side is raised.
+  const raise1 = S.p1.counts.raised, raise2 = S.p2.counts.raised;
+  W(0x9020, isSide(raise1 ? 2048 : 6144));
+  W(0x9078, isSide(raise2 ? 4096 : 8192));
+  W(0xd0905, raise1 || raise2 ? R(0xd0931) : build([110, 2094855179, NONE, 176, IMM, SELF, CHILD]));
+  W(0xd08ad, build([0, -20480, NONE, 142, IMM, SELF, CHILD]));    // shipped child offset (a test build changed it)
+
+  // frame image (with the optional trim); it moves to the end of the pak if it outgrows its slot
+  const img = frameImage(S);
+  const dv0 = new DataView(base.buffer, base.byteOffset, base.byteLength);
+  const dirOff = dv0.getUint32(4, true), dirLen = dv0.getUint32(8, true);
+  let slotEnd = dirOff;
+  for (let i = 0; i < dirLen / 256; i++) { const o = dv0.getUint32(dirOff + i * 256 + 248, true); if (o > frameEntry.off && o < slotEnd) slotEnd = o; }
+  if (frameEntry.off + img.length <= slotEnd) {
+    p.fill(0, frameEntry.off, slotEnd);
+    p.set(img, frameEntry.off);
+    new DataView(p.buffer).setUint32(frameEntry.dirEntry + 252, img.length, true);
+    return p;
+  }
+  const al = x => Math.ceil(x / 4096) * 4096, imgOff = al(dirOff), newDir = al(imgOff + img.length);
+  const q = new Uint8Array(newDir + dirLen); q.set(p.subarray(0, dirOff));
+  q.fill(0, frameEntry.off, slotEnd);
+  q.set(img, imgOff); q.set(p.subarray(dirOff, dirOff + dirLen), newDir);
+  const dq = new DataView(q.buffer);
+  dq.setUint32(4, newDir, true);
+  const e = newDir + (frameEntry.dirEntry - dirOff);
+  dq.setUint32(e + 248, imgOff, true); dq.setUint32(e + 252, img.length, true);
+  return q;
 }
 
 // ---------- preview ----------
@@ -333,23 +610,32 @@ function txt(s, x, y, size, align, color, weight) {
   g.lineWidth = Math.max(2, size / 7); g.strokeStyle = "rgba(0,0,0,.85)"; g.strokeText(s, x, y);
   g.fillStyle = color; g.fillText(s, x, y);
 }
-function rrect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.fill(); }
+function rrectPath(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function rrect(x, y, w, h, r) { rrectPath(x, y, w, h, r); g.fill(); }
 const COLORS = { p1: i => i < 6 ? "#3474c4" : i < 33 ? "#55b865" : i < 40 ? "#e01414" : "#3474c4", p2: i => i < 40 ? "#e14fc8" : i < 48 ? "#d8d018" : "#c4c6cc" };
 function drawSide(s, p, counters) {
   const t = s[p], G = geo(s, p), L = G.cx + CAL.stripL, Rr = L + (CAL.segs - 1) * CAL.pitch + CAL.seg;
   if (t.outline.on) {
-    g.fillStyle = "rgba(4,7,5,.76)";
+    const a = Math.max(0, Math.min(100, t.outline.op)) / 100, rim = s.rim || RIM_OFF();
     const innerEnd = G.m < 0 ? G.cx + CAL.outR : G.cx + CAL.outL;
     const outerEnd = s.noBox ? (G.m < 0 ? G.cx + CAL.outL : G.cx + CAL.outR) : (G.m < 0 ? L - 4 : Rr + 4);
-    rrect(Math.min(innerEnd, outerEnd), G.y - (CAL.outH - 1) / 2, Math.abs(outerEnd - innerEnd) + 1, CAL.outH, 2);
+    const shapes = [[Math.min(innerEnd, outerEnd), G.y - (CAL.outH - 1) / 2, Math.abs(outerEnd - innerEnd) + 1, CAL.outH]];
     if (!s.noBox) {
       const bx0 = G.m < 0 ? G.cx - BOX_OUT : G.cx + BOX_IN, bx1 = G.m < 0 ? G.cx - BOX_IN : G.cx + BOX_OUT;
-      rrect(bx0, G.y + BOX_TOP + 7, bx1 - bx0, BOX_BOT - BOX_TOP - 7, 2);
+      shapes.push([bx0, G.y + BOX_TOP + 7, bx1 - bx0, BOX_BOT - BOX_TOP - 7]);
     }
+    g.save(); g.globalAlpha = a;
+    g.fillStyle = "rgb(4,7,5)"; shapes.forEach(([x, y, w, h]) => rrect(x, y, w, h, 2));
+    if (rim.on) {                    // the art is drawn at about 0.83 scale, so 1 art pixel is about 0.83 screen pixels
+      const k = 843 / 1020, inW = Math.ceil(rim.size / 2) * k, outW = Math.floor(rim.size / 2) * k;
+      g.strokeStyle = rim.color; g.lineWidth = inW + outW;
+      shapes.forEach(([x, y, w, h]) => { const d = (outW - inW) / 2; rrectPath(x - d, y - d, w + 2 * d, h + 2 * d, 2); g.stroke(); });
+    }
+    g.restore();
   }
   for (let i = 0; i < CAL.segs; i++) { g.fillStyle = COLORS[p](i); g.fillRect(L + i * CAL.pitch, G.y - (CAL.segH - 1) / 2, CAL.seg, CAL.segH); }
   (p === "p1" ? [["46", 640], ["28", 981], ["7", 1066], ["22", 1324.5]] : [["50", 1073], ["8", 1175], ["13", 1324]])
-    .forEach(([s2, x]) => txt(s2, G.cx - 960 + x, G.y + CAL.countDy, 15, "center", "#ececec", 600));
+    .forEach(([s2, x]) => txt(s2, G.cx - 960 + x, G.y + CAL.countDy - (t.counts && t.counts.raised ? CAL.countRaise : 0), 15, "center", "#ececec", 600));
   const lab = p === "p1" ? "P1" : "P2";
   if (t.inner.on) txt(lab, G.inner.x, G.inner.y, 12, "center", "#fff");
   if (t.outer.on) txt(lab, G.outer.x, G.outer.y, 12, G.outerAlign, "#fff");
@@ -361,14 +647,49 @@ function drawSide(s, p, counters) {
   }
   return [G.cx + CAL.outL, G.cx + CAL.outR, G.num.x, G.tag.x, G.outer.x, G.inner.x, G.y, G.num.y, G.tag.y];
 }
+// "SEARCHING FOR PLAYERS..." banner the game shows over the bars while matchmaking (training mode + online search).
+// Measured: band y 903-965 fading out towards x 590 / 1330, gold rules top and bottom, text centred at (958, 932).
+function drawSearching() {
+  const y0 = 903, y1 = 963, xL = 560, xR = 1360;
+  const band = g.createLinearGradient(xL, 0, xR, 0);
+  band.addColorStop(0, "rgba(14,16,26,0)"); band.addColorStop(0.22, "rgba(14,16,26,.82)");
+  band.addColorStop(0.78, "rgba(14,16,26,.82)"); band.addColorStop(1, "rgba(14,16,26,0)");
+  g.fillStyle = band; g.fillRect(xL, y0, xR - xL, y1 - y0);
+  const rule = g.createLinearGradient(xL, 0, xR, 0);
+  rule.addColorStop(0, "rgba(201,170,104,0)"); rule.addColorStop(0.2, "rgba(201,170,104,.95)");
+  rule.addColorStop(0.8, "rgba(201,170,104,.95)"); rule.addColorStop(1, "rgba(201,170,104,0)");
+  g.fillStyle = rule; g.fillRect(xL, y0, xR - xL, 2); g.fillRect(xL, y1 - 2, xR - xL, 2);
+  g.save();
+  g.font = "600 30px 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if ("letterSpacing" in g) g.letterSpacing = "1px";
+  g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 4; g.fillStyle = "#f4efe4";
+  g.fillText("SEARCHING FOR PLAYERS...", 958.5, 933);
+  g.restore();
+}
+function drawGrid() {
+  const G = UI.grid, acc = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#e07a3f";
+  if (G.on && G.size >= 2) {
+    g.lineWidth = 1;
+    for (let x = 0; x <= 1920; x += G.size) { g.strokeStyle = x % (G.size * 10) === 0 ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.07)"; g.beginPath(); g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, 1080); g.stroke(); }
+    for (let y = 0; y <= 1080; y += G.size) { g.strokeStyle = y % (G.size * 10) === 0 ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.07)"; g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(1920, y + 0.5); g.stroke(); }
+    g.strokeStyle = "rgba(255,255,255,.28)"; g.beginPath(); g.moveTo(960.5, 0); g.lineTo(960.5, 1080); g.stroke();
+  }
+  g.save(); g.strokeStyle = acc; g.lineWidth = 1.5; g.setLineDash([8, 6]);
+  if (G.gxOn) [960 - G.gx, 960 + G.gx].forEach(x => { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 1080); g.stroke(); });
+  if (G.gyOn) { g.beginPath(); g.moveTo(0, G.gy); g.lineTo(1920, G.gy); g.stroke(); }
+  g.restore();
+}
 function draw() {
-  const s = view === "file" && fileS ? fileS : S, counters = view === "file" && fileKind === "original";
+  const s = view === "file" && fileS ? fileS : S, counters = view === "default" || (view === "file" && fileKind === "original");
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 1080);
   const pass = () => {
-    const grad = g.createLinearGradient(0, 0, 0, 1080); grad.addColorStop(0, "#5d6b4d"); grad.addColorStop(1, "#2f3a2c");
-    g.fillStyle = grad; g.fillRect(0, 0, 1920, 1080);
-    if (bgImg) { g.globalAlpha = UI.bgAlpha; g.drawImage(bgImg, 0, 0, 1920, 1080); g.globalAlpha = 1; }
+    const c = bgColour(), grad = g.createLinearGradient(0, 0, 0, 1080);
+    grad.addColorStop(0, shade(c, 0.18)); grad.addColorStop(1, shade(c, -0.22)); g.fillStyle = grad;
+    g.fillRect(0, 0, 1920, 1080);
+    drawGrid();
     const b = [...drawSide(s, "p1", counters), ...drawSide(s, "p2", counters)];
+    if (UI.grid.mm) drawSearching();
     const py = 1030;
     [["≡", 724], ["X", 854], ["Y", 900], ["RB", 946], ["A", 992]].forEach(([t, x]) => {
       g.fillStyle = "rgba(20,22,26,.85)"; g.beginPath(); g.arc(x, py, 17, 0, Math.PI * 2); g.fill();
@@ -378,13 +699,16 @@ function draw() {
     return b;
   };
   const b = pass();
-  if (UI.zoom) {
-    const xs = [b[0], b[1], b[2], b[3], b[4], b[5], b[9], b[10], b[11], b[12], b[13], b[14]], ys = [b[6], b[7], b[8], b[15], b[16], b[17]];
-    const x0 = Math.max(0, Math.min(...xs) - 60), x1 = Math.min(1920, Math.max(...xs) + 60);
-    const yc = (Math.min(...ys) + Math.max(...ys)) / 2, w = Math.max(400, x1 - x0), h = w * 1080 / 1920;
-    const top = Math.min(Math.max(yc - h * 0.5, 0), 1080 - h), sc = 1920 / w;
+  const xs = [b[0], b[1], b[2], b[3], b[4], b[5], b[9], b[10], b[11], b[12], b[13], b[14]], ys = [b[6], b[7], b[8], b[15], b[16], b[17]];
+  UI.fit = 1920 / Math.max(400, Math.min(1920, Math.max(...xs) + 60) - Math.max(0, Math.min(...xs) - 60));   // zoom that frames the bars
+  if (UI.zoom > 1) {
+    // zoom around the centre of the bars, kept inside the 1920x1080 screen
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2 + UI.panX, cy = (Math.min(...ys) + Math.max(...ys)) / 2 + UI.panY;
+    const w = 1920 / UI.zoom, h = 1080 / UI.zoom;
+    const left = Math.min(Math.max(cx - w / 2, 0), 1920 - w), top = Math.min(Math.max(cy - h / 2, 0), 1080 - h);
+    UI.panX += (left + w / 2) - cx; UI.panY += (top + h / 2) - cy;   // stop the pan running past the screen edge
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 1080);
-    g.setTransform(sc, 0, 0, sc, -x0 * sc, -top * sc); pass();
+    g.setTransform(UI.zoom, 0, 0, UI.zoom, -left * UI.zoom, -top * UI.zoom); pass();
   }
 }
 
@@ -392,25 +716,37 @@ function draw() {
 const $ = id => document.getElementById(id);
 const groups = $("groups");
 function makeNum(p, el, f) {
-  const [key, label, min, max] = f, id = p + "_" + el.key + "_" + key;
+  const [key, label, min, max, opt] = f, id = p + "_" + el.key + "_" + key;
+  const step = (opt && opt.step) || 0.5, nudges = (opt && opt.nudges) || [-10, -1, -0.5, 0.5, 1, 10];
   const w = document.createElement("div"); w.className = "ctl";
-  w.innerHTML = '<div class="lab"><span>' + label + '</span><input type="number" step="0.5" id="' + id + 'n"></div>' +
-    '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="0.5">' +
-    '<div class="nudge">' + [-10, -1, -0.5, 0.5, 1, 10].map(d => '<button data-d="' + d + '">' + (d > 0 ? "+" : "−") + Math.abs(d) + '</button>').join("") + '</div>';
-  const apply = v => {
+  w.innerHTML = '<div class="lab"><span>' + label + '</span><input type="number" step="' + step + '" min="' + (opt ? min : "") + '" max="' + (opt ? max : "") + '" id="' + id + 'n"></div>' +
+    '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '">' +
+    '<div class="nudge">' + nudges.map(d => '<button data-d="' + d + '">' + (d > 0 ? "+" : "−") + Math.abs(d) + '</button>').join("") + '</div>';
+  const apply = (v, dir) => {
     if (isNaN(v)) return;
-    v = Math.round(v * 2) / 2;
-    if (UI.simple && p === "p1") { const d = v - S.p1[el.key][key]; S.p2[el.key][key] = Math.round((S.p2[el.key][key] + (key === "x" ? -d : d)) * 2) / 2; }
+    v = Math.round(v / step) * step;
+    if (opt) v = Math.min(max, Math.max(min, v));             // bounded values (opacity)
+    if (!dir && v === S[p][el.key][key]) return;            // nothing changed (e.g. a box re-synced on blur)
+    if (UI.snap[el.key]) v = snapValue(p, el.key, key, v, dir || 0);
+    if (linked(el.key) && (p === "p1" || !UI.simple)) {
+      const o = p === "p1" ? "p2" : "p1", d = v - S[p][el.key][key];
+      let ov = Math.round((S[o][el.key][key] + (key === "x" ? -d : d)) / step) * step;   // X mirrored, Y the same
+      if (opt) ov = Math.min(max, Math.max(min, ov));
+      S[o][el.key][key] = ov;
+    }
     S[p][el.key][key] = v; changed();
   };
   w.querySelector("#" + id).addEventListener("input", e => apply(parseFloat(e.target.value)));
   w.querySelector("#" + id + "n").addEventListener("change", e => apply(parseFloat(e.target.value)));
-  w.querySelectorAll(".nudge button").forEach(btn => btn.addEventListener("click", () => apply(S[p][el.key][key] + parseFloat(btn.dataset.d))));
+  w.querySelectorAll(".nudge button").forEach(btn => btn.addEventListener("click", () => { const d = parseFloat(btn.dataset.d); apply(S[p][el.key][key] + d, Math.sign(d)); }));
   return w;
 }
 ELEMENTS.forEach(el => {
   const card = document.createElement("div"); card.className = "card";
-  card.innerHTML = "<h2>" + el.name + '<button class="link" data-copy="' + el.key + '" title="Copy P1 to P2, mirroring X">P1 → P2 (mirror X)</button></h2>';
+  card.innerHTML = "<h2><span>" + el.name + '</span><span class="acts">' +
+    (el.fields.length || el.show || el.checks ? '<label class="check link-opt" title="Changes to either side also apply to the other (X mirrored, Y the same)"><input type="checkbox" data-link="' + el.key + '"> Link P1 &amp; P2</label>' : "") +
+    (el.fields.length && !el.noSnap ? '<label class="check" title="Snap to the grid and your margin lines"><input type="checkbox" data-snap="' + el.key + '"> Snap</label>' : "") +
+    '<button data-reset="' + el.key + '" title="Put this section back to the game\'s default values">Reset</button></span></h2>';
   const sides = document.createElement("div"); sides.className = "sides";
   ["p1", "p2"].forEach(p => {
     const col = document.createElement("div"); col.className = "side " + p; col.id = p + "_" + el.key;
@@ -418,14 +754,46 @@ ELEMENTS.forEach(el => {
     h.innerHTML = '<span class="tag">' + p.toUpperCase() + "</span>" + (el.show ? '<label class="check" style="margin:0"><input type="checkbox" id="' + p + "_" + el.key + '_on"> show</label>' : "");
     col.appendChild(h);
     el.fields.forEach(f => col.appendChild(makeNum(p, el, f)));
-    if (el.show) h.querySelector("input").addEventListener("change", e => { S[p][el.key].on = e.target.checked; if (UI.simple && p === "p1") S.p2[el.key].on = e.target.checked; changed(); });
+    (el.checks || []).forEach(([k, label]) => {
+      const c = document.createElement("label"); c.className = "check";
+      c.innerHTML = '<input type="checkbox" id="' + p + "_" + el.key + "_" + k + '"> ' + label;
+      c.querySelector("input").addEventListener("change", e => {
+        (linked(el.key) ? ["p1", "p2"] : [p]).forEach(q => { S[q][el.key][k] = e.target.checked; });
+        changed();
+      });
+      col.appendChild(c);
+    });
+    if (el.show) h.querySelector("input").addEventListener("change", e => {
+      const sidesToSet = linked(el.key) ? ["p1", "p2"] : [p];
+      sidesToSet.forEach(q => {
+        S[q][el.key].on = e.target.checked;
+        if (el.key === "tag" && e.target.checked) placeTagNextToNumber(q);
+      });
+      changed();
+    });
     sides.appendChild(col);
   });
-  card.appendChild(sides); groups.appendChild(card);
-  card.querySelector("[data-copy]").addEventListener("click", () => {
-    const a = clone(S.p1[el.key]); if ("x" in a) a.x = -a.x;
-    if (el.key === "bar") a.y = S.p2.bar.y;
-    S.p2[el.key] = a; changed();
+  card.appendChild(sides);
+  if (el.rim) {                      // trim: one image is shared by both bars, so this applies to both
+    const r = document.createElement("div"); r.className = "rimrow";
+    r.innerHTML = '<label class="check"><input type="checkbox" id="rimOn"> <b>Trim</b></label>' +
+      '<label class="picker" title="Trim colour"><input id="rimColor" type="color" value="#c9a862"><span>Colour</span><code id="rimHex">#C9A862</code></label>' +
+      '<label class="rimsize">Size <input id="rimSize" type="range" min="1" max="6" step="1"><code id="rimSizeVal"></code></label>' +
+      '<p class="note">The trim colours the edge of the outline art on both bars. Size 1 is a thin edge; bigger sizes grow inward and outward. The trim uses the outline opacity.</p>';
+    card.appendChild(r);
+    r.querySelector("#rimOn").addEventListener("change", e => { S.rim.on = e.target.checked; changed(); });
+    r.querySelector("#rimColor").addEventListener("input", e => { S.rim.color = e.target.value; S.rim.on = true; changed(); });
+    r.querySelector("#rimSize").addEventListener("input", e => { S.rim.size = parseInt(e.target.value, 10); S.rim.on = true; changed(); });
+  }
+  groups.appendChild(card);
+  const lk = card.querySelector("[data-link]");
+  if (lk) lk.addEventListener("change", e => { UI.link[el.key] = e.target.checked; });
+  const sn = card.querySelector("[data-snap]");
+  if (sn) sn.addEventListener("change", e => { UI.snap[el.key] = e.target.checked; });
+  card.querySelector("[data-reset]").addEventListener("click", () => {
+    const d = PRESETS.shipped(); S.p1[el.key] = d.p1[el.key]; S.p2[el.key] = d.p2[el.key];
+    if (el.rim) S.rim = d.rim;
+    changed();
   });
 });
 function syncUI() {
@@ -434,15 +802,21 @@ function syncUI() {
   ["p1", "p2"].forEach(p => ELEMENTS.forEach(el => {
     el.fields.forEach(([k]) => { const id = p + "_" + el.key + "_" + k; $(id).value = S[p][el.key][k]; $(id + "n").value = S[p][el.key][k]; });
     if (el.show) { $(p + "_" + el.key + "_on").checked = S[p][el.key].on; }
+    (el.checks || []).forEach(([k]) => { $(p + "_" + el.key + "_" + k).checked = !!S[p][el.key][k]; });
     const col = $(p + "_" + el.key);
     col.querySelectorAll(".ctl").forEach(c => c.classList.toggle("dis", el.show && !S[p][el.key].on));
   }));
   $("noBox").checked = S.noBox;
+  $("rimOn").checked = S.rim.on; $("rimColor").value = S.rim.color; $("rimHex").textContent = S.rim.color.toUpperCase();
+  $("rimSize").value = S.rim.size; $("rimSizeVal").textContent = S.rim.size + " px";
+  $("rimColor").closest(".picker").classList.toggle("dis", !S.rim.on); $("rimSize").closest(".rimsize").classList.toggle("dis", !S.rim.on);
   $("vFile").disabled = !fileKind; $("revert").disabled = !fileKind;
   $("vFile").classList.toggle("on", view === "file"); $("vEdit").classList.toggle("on", view === "edit");
-  $("viewNote").textContent = view === "file"
+  $("viewNote").textContent = view === "default"
+    ? "Showing the game's default layout. Make any change, pick a preset, or load a pak, and the preview follows your edits."
+    : view === "file"
     ? (fileKind === "original" ? "Showing the loaded file as the game ships it (with its counters, which can't be kept once you save)." : "Showing the loaded file.")
-    : (fileKind ? "Showing your edits. This is what Download writes." : "Showing the recommended layout. Load a pak to start from its layout.");
+    : (fileKind ? "Showing your edits. This is what Download writes." : "Showing your edits. Load a pak to save them.");
 }
 function changed() { view = "edit"; syncUI(); draw(); table(); }
 $("simple").addEventListener("change", e => { UI.simple = e.target.checked; try { localStorage.setItem("framebar-simple", UI.simple ? "1" : "0"); } catch (err) {} syncUI(); });
@@ -452,17 +826,77 @@ $("pShip").addEventListener("click", () => { S = PRESETS.shipped(); changed(); }
 $("revert").addEventListener("click", () => { S = clone(fileS); changed(); });
 $("vFile").addEventListener("click", () => { view = "file"; syncUI(); draw(); });
 $("vEdit").addEventListener("click", () => { view = "edit"; syncUI(); draw(); });
-$("zoom").addEventListener("change", e => { UI.zoom = e.target.checked; draw(); });
-$("bgAlpha").addEventListener("input", e => { UI.bgAlpha = e.target.value / 100; draw(); });
-$("bgBtn").addEventListener("click", () => $("bgFile").click());
-$("bgFile").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { bgImg = img; draw(); }; img.src = URL.createObjectURL(f); });
+function setZoom(z) {
+  UI.zoom = Math.min(8, Math.max(1, Math.round(z * 4) / 4));
+  if (UI.zoom === 1) { UI.panX = 0; UI.panY = 0; }
+  $("zoom").value = UI.zoom; $("zoomVal").textContent = UI.zoom + "\u00d7";
+  $("cv").classList.toggle("pannable", UI.zoom > 1); draw();
+}
+// click and drag to move around while zoomed in
+(() => {
+  const cv = $("cv"); let drag = null;
+  cv.addEventListener("pointerdown", e => {
+    if (UI.zoom <= 1) return;
+    drag = { x: e.clientX, y: e.clientY, px: UI.panX, py: UI.panY };
+    cv.setPointerCapture(e.pointerId); cv.classList.add("panning");
+  });
+  cv.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const perCssPx = 1920 / UI.zoom / cv.getBoundingClientRect().width;   // game pixels per screen pixel
+    UI.panX = drag.px - (e.clientX - drag.x) * perCssPx; UI.panY = drag.py - (e.clientY - drag.y) * perCssPx; draw();
+  });
+  const end = e => { if (!drag) return; drag = null; cv.classList.remove("panning"); try { cv.releasePointerCapture(e.pointerId); } catch (err) {} };
+  cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+  cv.addEventListener("dblclick", () => { UI.panX = 0; UI.panY = 0; draw(); });
+})();
+$("zoom").addEventListener("input", e => setZoom(parseFloat(e.target.value)));
+$("zoomFit").addEventListener("click", () => { UI.panX = 0; UI.panY = 0; setZoom(UI.fit || 2); });
+$("cv").addEventListener("wheel", e => { e.preventDefault(); setZoom(UI.zoom * (e.deltaY < 0 ? 1.25 : 0.8)); }, { passive: false });
+// preview background: the theme's colour, or one the viewer picks (with a soft top-to-bottom shade)
+function bgColour() { return UI.bg || getComputedStyle(document.documentElement).getPropertyValue("--preview").trim() || "#2b3038"; }
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(amt > 0 ? v + (255 - v) * amt : v * (1 + amt))));
+  return "rgb(" + f(n >> 16) + "," + f((n >> 8) & 255) + "," + f(n & 255) + ")";
+}
+function syncBg() { const c = bgColour(); $("bgColor").value = c; $("bgHex").textContent = c.toUpperCase(); $("bgReset").hidden = !UI.bg; }
+function setBg(v) {
+  UI.bg = v; try { v ? localStorage.setItem("framebar-bg", v) : localStorage.removeItem("framebar-bg"); } catch (err) {}
+  syncBg(); draw();
+}
+$("bgColor").addEventListener("input", e => setBg(e.target.value));
+function syncGrid() {
+  const G = UI.grid;
+  $("gridOn").checked = G.on; $("gridSize").value = G.size; $("guideXOn").checked = G.gxOn; $("guideX").value = G.gx; $("guideYOn").checked = G.gyOn; $("guideY").value = G.gy;
+  $("mmOn").checked = G.mm;
+  $("guideXVal").textContent = "\u00b1" + G.gx; $("guideYVal").textContent = "y " + G.gy;
+  $("gridSize").disabled = !G.on; $("guideX").disabled = !G.gxOn; $("guideY").disabled = !G.gyOn;
+  try { localStorage.setItem("framebar-grid", JSON.stringify(G)); } catch (err) {}
+}
+[["gridOn", "on", "checked"], ["guideXOn", "gxOn", "checked"], ["guideYOn", "gyOn", "checked"], ["mmOn", "mm", "checked"]].forEach(([id, k]) =>
+  $(id).addEventListener("change", e => { UI.grid[k] = e.target.checked; syncGrid(); draw(); }));
+[["gridSize", "size", 2, 200, "change"], ["guideX", "gx", 0, 960, "input"], ["guideY", "gy", 0, 1080, "input"]].forEach(([id, k, lo, hi, ev]) =>
+  $(id).addEventListener(ev, e => { const v = parseFloat(e.target.value); if (!isNaN(v)) UI.grid[k] = Math.min(hi, Math.max(lo, v)); syncGrid(); draw(); }));
+syncGrid();
+$("bgReset").addEventListener("click", e => { e.preventDefault(); setBg(null); });
+function setTheme(t) {
+  document.documentElement.dataset.theme = t; try { localStorage.setItem("framebar-theme", t); } catch (err) {}
+  document.querySelectorAll(".swatch").forEach(b => b.classList.toggle("on", b.dataset.theme === t));
+}
+function pickTheme(t) { setTheme(t); setBg(null); }   // choosing a palette also brings the preview back to that palette
+document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => pickTheme(b.dataset.theme)));
+(() => { let t = "dark"; try { t = localStorage.getItem("framebar-theme") || "dark"; } catch (err) {} if (!document.querySelector('.swatch[data-theme="' + t + '"]')) t = "dark"; setTheme(t); })();
+syncBg(); draw();
 function table() {
   const tb = document.querySelector("#vals tbody"); tb.innerHTML = "";
   const add = c => { const tr = document.createElement("tr"); c.forEach(x => { const td = document.createElement("td"); td.textContent = x; tr.appendChild(td); }); tb.appendChild(tr); return tr; };
   const f = (p, el) => { const t = S[p][el]; return (t.on === false ? "hidden" : ("x " + t.x + ", y " + t.y)); };
   add(["Bar (X, row y)", "x " + S.p1.bar.x + ", y " + S.p1.bar.y, "x " + S.p2.bar.x + ", y " + S.p2.bar.y]);
-  add(["Outline", S.p1.outline.on ? "shown" : "hidden", S.p2.outline.on ? "shown" : "hidden"]);
-  [["inner", "Inner label"], ["outer", "Outer label"], ["num", "+/− number"], ["tag", "Number tag"]].forEach(([k, n]) => add([n, f("p1", k), f("p2", k)]));
+  const op = p => S[p].outline.on ? S[p].outline.op + "% (" + Math.round(S[p].outline.op * 2048 / 100) + ")" : "hidden";
+  add(["Outline opacity", op("p1"), op("p2")]);
+  const tr = S.rim.on ? S.rim.color.toUpperCase() + ", " + S.rim.size + " px" : "off";
+  add(["Trim (shared image)", tr, tr]);
+  add(["Frame counts", S.p1.counts.raised ? "above the strip" : "below (game default)", S.p2.counts.raised ? "above the strip" : "below (game default)"]);
+  [["inner", "Inner label"], ["outer", "Outer label"], ["num", "Frame advantage"], ["tag", "P1/P2 beside frame advantage"]].forEach(([k, n]) => add([n, f("p1", k), f("p2", k)]));
   add(["Counter box", S.noBox ? "removed" : "shown", S.noBox ? "removed" : "shown"]);
   if (base) { try { patch(); } catch (err) { add([err.message, "", ""]).style.color = "var(--bad)"; } }
 }
