@@ -35,7 +35,7 @@
   --accent:#e39a2f; --on-accent:#2a1700; --p1:#c9601f; --p2:#2f78c4; --on-p2:#ffffff; --ok:#3d8f45; --warn:#9a6a00; --bad:#c23a2f;
   color-scheme:light;
 }
-.themeWrap{margin-left:auto;position:relative}
+.themeWrap{margin-left:auto;position:relative;flex:none}
 .themeBtn{display:none}
 .themes{display:flex;gap:6px;align-items:center}
 .themes .lbl{font-size:12px;color:var(--muted);margin-right:2px}
@@ -53,8 +53,28 @@
 .picker .reset:hover{color:var(--accent)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-header h1{font-size:18px;margin:0;font-weight:650}
+#topStack{position:sticky;top:0;z-index:20;background:var(--bg)}
+header{background:var(--bg);padding:12px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:nowrap;white-space:nowrap;min-width:0}
+header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+header .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+/* steps the header takes, one at a time, until it fits on one line */
+header.lv1 .subMore{display:none}
+header.lv2 .themeBtn{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;font-size:13px;border-radius:999px}
+header.lv2 .themeBtn .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:inline-block}
+header.lv2 .themeBtn .caret{font-size:10px;color:var(--muted)}
+header.lv2 .themes{display:none;position:absolute;right:0;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:4px;padding:6px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:40}
+header.lv2 .themeWrap.open .themes{display:flex}
+header.lv2 .themes .lbl{display:none}
+header.lv2 .themes .swatch{width:auto;height:auto;border:0;border-radius:8px;overflow:visible;display:flex;align-items:center;gap:10px;padding:7px 10px;background:none;text-align:left;font-size:14px;color:var(--text)}
+header.lv2 .themes .swatch span{position:static;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none}
+header.lv2 .themes .swatch::after{content:attr(title)}
+header.lv2 .themes .swatch.on{outline:0;background:var(--panel2);color:var(--accent);font-weight:650}
+/* last step (phones): full title, theme button beside it, credit on its own line underneath */
+header.twoLine{flex-wrap:wrap;row-gap:2px;align-items:center}
+header.twoLine h1{white-space:normal;overflow:visible;flex:1 1 0;min-width:0}
+header.twoLine .themeWrap{align-self:flex-start}
+header.twoLine .sub{order:3;flex-basis:100%;overflow:visible}
+header h1{font-size:18px;margin:0;font-weight:650;line-height:1.35}
 header .sub{color:var(--muted);font-size:13px}
 main{display:grid;grid-template-columns:clamp(380px,30vw,520px) minmax(0,1fr);gap:16px;padding:16px 20px;align-items:start}
 @media (max-width:1100px){main{grid-template-columns:1fr}}
@@ -103,7 +123,6 @@ main{display:grid;grid-template-columns:clamp(380px,30vw,520px) minmax(0,1fr);ga
   .zoomctl input[type=range],.guide input[type=range]{width:70px}
 }
 @media (max-width:1450px) and (min-width:701px){header h1{font-size:16px} header .sub{font-size:12px} header{gap:12px}}
-@media (max-width:1300px) and (min-width:701px){header .subMore{display:none}}
 @media (max-height:820px) and (min-width:1101px){
   .note.accuracy{display:none}
   main{padding-top:10px}
@@ -111,27 +130,18 @@ main{display:grid;grid-template-columns:clamp(380px,30vw,520px) minmax(0,1fr);ga
 }
 @media (max-width:1100px){
   /* narrow screens: the preview picture gets its own full-width strip that stays on screen; its settings scroll with the page */
-  #cvDock{display:block;order:-2;position:sticky;top:calc(var(--hdr, 0px) - 1px);z-index:5;background:var(--bg);margin:-16px -20px 0;padding:8px 8px 10px;border-bottom:1px solid var(--line);box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  #cvDock{display:block;padding:8px 8px 10px;border-bottom:1px solid var(--line)}
+  #topStack{box-shadow:0 6px 16px rgba(0,0,0,.35)}
   #cvDock canvas{margin:0 auto}
   .sticky{order:-1;position:static;max-height:none;overflow:visible}
 }
 @media (max-width:700px){
-  header{padding:10px 12px;gap:4px 10px;flex-wrap:wrap}
-  header h1{font-size:15px;line-height:1.3;flex:1;min-width:0}
-  header .sub{order:3;flex-basis:100%;font-size:12px}
-  header .subMore{display:none}
-  .themeWrap{order:2;margin-left:0;align-self:flex-start}
-  .themeBtn{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;font-size:13px;border-radius:999px}
-  .themeBtn .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:inline-block}
-  .themeBtn .caret{font-size:10px;color:var(--muted)}
-  .themes{display:none;position:absolute;right:0;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:4px;padding:6px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:40}
-  .themeWrap.open .themes{display:flex}
-  .themes .lbl{display:none}
-  .themes .swatch{width:auto;height:auto;border:0;border-radius:8px;overflow:visible;display:flex;align-items:center;gap:10px;padding:7px 10px;background:none;text-align:left;font-size:14px}
-  .themes .swatch span{position:static;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none}
-  .themes .swatch::after{content:attr(title)}
-  .themes .swatch.on{outline:0;background:var(--panel2);color:var(--accent);font-weight:650}
- main{padding:16px 12px} #cvDock{margin:-16px -12px 0;padding:6px 4px 8px}}
+  header{padding:8px 12px;gap:10px}
+  header h1{font-size:15px}
+  header .sub{font-size:12px}
+  main{padding:16px 12px}
+  #cvDock{padding:6px 4px 8px}
+}
 details.vals{padding:10px 14px}
 .valsBody{overflow:auto}
 details.vals summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
@@ -186,9 +196,10 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
 </style>
 </head>
 <body>
+<div id="topStack">
 <header>
   <h1>Avatar Legends: The Fighting Game Frame Bar Editor</h1>
-  <span class="sub">Made by PSIClipse<span class="subMore"> &middot; edits the training-mode frame bars in <code>training_timing_bar.pak</code></span></span>
+  <span class="sub"><span class="subMade">Made by PSIClipse</span><span class="subMore"> &middot; edits the training-mode frame bars in <code>training_timing_bar.pak</code></span></span>
   <div class="themeWrap" id="themeWrap">
   <button class="themeBtn" id="themeBtn" type="button" aria-haspopup="true" aria-expanded="false"><span class="dot" id="themeDot"></span><span id="themeName">Theme</span><span class="caret">&#9662;</span></button>
   <div class="themes" role="group" aria-label="Colour theme">
@@ -201,8 +212,9 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
   </div>
   </div>
 </header>
+<div id="cvDock"></div>
+</div>
 <main>
-  <div id="cvDock"></div>
   <div class="stack" id="controls">
     <div class="card">
       <h2>1. Load a pak</h2>
@@ -930,7 +942,7 @@ let cvHome = null;                  // where the canvas lives in the preview car
 function fitPreview() {
   const cvs = $("cv"), box = document.querySelector(".sticky"), body = $("valsBody"), sum = $("valsBox").querySelector("summary");
   const narrow = matchMedia("(max-width:1100px)").matches, MIN_CV = 120, head = document.querySelector("header");
-  const hdr = getComputedStyle(head).position === "sticky" ? Math.floor(head.getBoundingClientRect().height) : 0;   // rounded down so the strip tucks under the header instead of leaving a gap
+  const hdr = Math.floor(head.getBoundingClientRect().height);   // the header (and, on narrow screens, the preview strip under it) stick as one block
   document.documentElement.style.setProperty("--hdr", hdr + "px");
   if (!cvHome) cvHome = { parent: cvs.parentElement, next: cvs.nextSibling };
   cvs.style.width = ""; body.style.maxHeight = "none"; $("valsBox").classList.remove("up");
@@ -957,10 +969,20 @@ function fitPreview() {
     body.style.maxHeight = Math.max(110, Math.floor(sumBottom - sum.getBoundingClientRect().height - 40)) + "px";
   }
 }
-window.addEventListener("resize", fitPreview);
-// the header's height changes when its text wraps or the web font arrives; keep the preview strip snug under it
-if (window.ResizeObserver) new ResizeObserver(() => fitPreview()).observe(document.querySelector("header"));
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitPreview);
+// Header: one line where it fits. Steps: short subtitle, then the theme dropdown, then (phones) the credit
+// moves to its own line under the full title.
+function fitHeader() {
+  const h = document.querySelector("header"), LV = ["lv1", "lv2", "twoLine"];
+  LV.forEach(c => h.classList.remove(c));
+  const fits = () => h.classList.contains("twoLine") || h.scrollWidth <= h.clientWidth + 1 && [...h.querySelectorAll("h1, .sub")].every(e => e.scrollWidth <= e.clientWidth + 1);
+  for (let i = 0; i < LV.length && !fits(); i++) h.classList.add(LV[i]);
+  if (!h.classList.contains("lv2")) themeMenu(false);
+}
+let fitQueued = false;
+function relayout() { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitHeader(); fitPreview(); }); }
+window.addEventListener("resize", relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe(document.querySelector("header"));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
 // preview background: the theme's colour, or one the viewer picks (with a soft top-to-bottom shade)
 function bgColour() { return UI.bg || getComputedStyle(document.documentElement).getPropertyValue("--preview").trim() || "#2b3038"; }
 function shade(hex, amt) {
@@ -1053,7 +1075,7 @@ $("save").addEventListener("click", () => {
 });
 try { $("valsBox").open = localStorage.getItem("framebar-vals") === "1"; } catch (err) {}
 $("valsBox").addEventListener("toggle", () => { try { localStorage.setItem("framebar-vals", $("valsBox").open ? "1" : "0"); } catch (err) {} fitPreview(); });
-syncUI(); draw(); table(); fitPreview();
+syncUI(); draw(); table(); fitHeader(); fitPreview();
 })();
 </script>
 </body>
