@@ -35,7 +35,9 @@
   --accent:#e39a2f; --on-accent:#2a1700; --p1:#c9601f; --p2:#2f78c4; --on-p2:#ffffff; --ok:#3d8f45; --warn:#9a6a00; --bad:#c23a2f;
   color-scheme:light;
 }
-.themes{margin-left:auto;display:flex;gap:6px;align-items:center}
+.themeWrap{margin-left:auto;position:relative}
+.themeBtn{display:none}
+.themes{display:flex;gap:6px;align-items:center}
 .themes .lbl{font-size:12px;color:var(--muted);margin-right:2px}
 .swatch{width:26px;height:26px;border-radius:50%;padding:0;border:2px solid var(--line);cursor:pointer;position:relative;overflow:hidden}
 .swatch.on{outline:2px solid var(--accent);outline-offset:2px}
@@ -54,7 +56,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-a
 header{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 header h1{font-size:18px;margin:0;font-weight:650}
 header .sub{color:var(--muted);font-size:13px}
-main{display:grid;grid-template-columns:minmax(420px,520px) 1fr;gap:16px;padding:16px 20px;align-items:start}
+main{display:grid;grid-template-columns:clamp(380px,30vw,520px) minmax(0,1fr);gap:16px;padding:16px 20px;align-items:start}
 @media (max-width:1100px){main{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
 .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -81,8 +83,55 @@ main{display:grid;grid-template-columns:minmax(420px,520px) 1fr;gap:16px;padding
 .guide code{min-width:52px;text-align:right;background:none;padding:0;font-size:12px;color:var(--muted)}
 .sticky{position:sticky;top:calc(var(--hdr, 0px) + 12px)}
 #cv{max-width:100%;margin-left:auto;margin-right:auto}
-@media (max-width:1100px){.sticky{order:-1;top:var(--hdr, 0px);z-index:5;max-height:none;overflow:visible;padding-top:6px;background:var(--bg)}
-  .sticky .card{box-shadow:0 6px 16px rgba(0,0,0,.35)} }
+#cvDock{display:none}
+/* laptops: keep the preview toolbars to two rows and give the picture the room */
+@media (max-width:1700px) and (min-width:1101px){
+  .sticky .toolbar{gap:6px 8px}
+  .sticky h2 .dim{display:none}
+  .zoomctl input[type=range]{width:84px}
+  .guides{gap:10px}
+  .guide{gap:5px}
+  .guide input[type=range]{width:84px}
+  .guide code{min-width:36px}
+  .picker{padding:3px 6px 3px 3px;gap:6px}
+  .picker input[type=color]{width:22px;height:22px}
+  .seg button{padding:5px 8px}
+}
+@media (max-width:1350px) and (min-width:1101px){
+  .picker > span{display:none}
+  .gridbar .sep{display:none}
+  .zoomctl input[type=range],.guide input[type=range]{width:70px}
+}
+@media (max-width:1450px) and (min-width:701px){header h1{font-size:16px} header .sub{font-size:12px} header{gap:12px}}
+@media (max-width:1300px) and (min-width:701px){header .subMore{display:none}}
+@media (max-height:820px) and (min-width:1101px){
+  .note.accuracy{display:none}
+  main{padding-top:10px}
+  .card{padding:12px}
+}
+@media (max-width:1100px){
+  /* narrow screens: the preview picture gets its own full-width strip that stays on screen; its settings scroll with the page */
+  #cvDock{display:block;order:-2;position:sticky;top:calc(var(--hdr, 0px) - 1px);z-index:5;background:var(--bg);margin:-16px -20px 0;padding:8px 8px 10px;border-bottom:1px solid var(--line);box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  #cvDock canvas{margin:0 auto}
+  .sticky{order:-1;position:static;max-height:none;overflow:visible}
+}
+@media (max-width:700px){
+  header{padding:10px 12px;gap:4px 10px;flex-wrap:wrap}
+  header h1{font-size:15px;line-height:1.3;flex:1;min-width:0}
+  header .sub{order:3;flex-basis:100%;font-size:12px}
+  header .subMore{display:none}
+  .themeWrap{order:2;margin-left:0;align-self:flex-start}
+  .themeBtn{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;font-size:13px;border-radius:999px}
+  .themeBtn .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:inline-block}
+  .themeBtn .caret{font-size:10px;color:var(--muted)}
+  .themes{display:none;position:absolute;right:0;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:4px;padding:6px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:40}
+  .themeWrap.open .themes{display:flex}
+  .themes .lbl{display:none}
+  .themes .swatch{width:auto;height:auto;border:0;border-radius:8px;overflow:visible;display:flex;align-items:center;gap:10px;padding:7px 10px;background:none;text-align:left;font-size:14px}
+  .themes .swatch span{position:static;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none}
+  .themes .swatch::after{content:attr(title)}
+  .themes .swatch.on{outline:0;background:var(--panel2);color:var(--accent);font-weight:650}
+ main{padding:16px 12px} #cvDock{margin:-16px -12px 0;padding:6px 4px 8px}}
 details.vals{padding:10px 14px}
 .valsBody{overflow:auto}
 details.vals summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
@@ -139,7 +188,9 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
 <body>
 <header>
   <h1>Avatar Legends: The Fighting Game Frame Bar Editor</h1>
-  <span class="sub">Made by PSIClipse &middot; edits the training-mode frame bars in <code>training_timing_bar.pak</code></span>
+  <span class="sub">Made by PSIClipse<span class="subMore"> &middot; edits the training-mode frame bars in <code>training_timing_bar.pak</code></span></span>
+  <div class="themeWrap" id="themeWrap">
+  <button class="themeBtn" id="themeBtn" type="button" aria-haspopup="true" aria-expanded="false"><span class="dot" id="themeDot"></span><span id="themeName">Theme</span><span class="caret">&#9662;</span></button>
   <div class="themes" role="group" aria-label="Colour theme">
     <span class="lbl">Theme</span>
     <button class="swatch" data-theme="dark" title="Dark"><span style="background:linear-gradient(135deg,#14161a 50%,#e07a3f 50%)"></span></button>
@@ -148,8 +199,10 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
     <button class="swatch" data-theme="fire" title="Fire"><span style="background:linear-gradient(135deg,#241210 50%,#ff5a2a 50%)"></span></button>
     <button class="swatch" data-theme="air" title="Air"><span style="background:linear-gradient(135deg,#fffcf5 50%,#e39a2f 50%)"></span></button>
   </div>
+  </div>
 </header>
 <main>
+  <div id="cvDock"></div>
   <div class="stack" id="controls">
     <div class="card">
       <h2>1. Load a pak</h2>
@@ -166,7 +219,6 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
         <button id="pShip">Shipped</button>
       </div>
       <div class="check"><input id="simple" type="checkbox"><label for="simple"><b>Simple edit</b>: one set of controls; P2 follows P1 with X mirrored</label></div>
-      <div class="check"><input id="noBox" type="checkbox"><label for="noBox">Remove the counter box (both sides share one image)</label></div>
       <p class="note">Put the download in <code>data_packages</code> as <code>training_timing_bar.pak</code>, then restart the game. <b>X</b>: + moves right, &minus; moves left. <b>Y</b>: + moves down, &minus; moves up. Element offsets are relative to where the game puts that element on its own bar.</p>
     </div>
     <div id="groups"></div>
@@ -175,7 +227,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
   <div class="stack sticky">
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0">Preview (1920 &times; 1080)</h2>
+        <h2 style="margin:0">Preview<span class="dim"> (1920 &times; 1080)</span></h2>
         <span class="seg"><button id="vFile" disabled>Loaded file</button><button id="vEdit" class="on">Your edits</button></span>
         <label class="mini zoomctl">Zoom <input id="zoom" type="range" min="1" max="8" step="0.25" value="1"> <code id="zoomVal">1&times;</code></label><button id="zoomFit" type="button" title="Zoom to fit the bars">Fit</button>
         <label class="picker" title="Preview background (follows the theme until you pick a colour)">
@@ -197,7 +249,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(-
       </div>
       <p id="viewNote" class="note"></p>
       <canvas id="cv" width="1920" height="1080"></canvas>
-      <p class="note">Drawn from measurements of your screenshots, so expect a few pixels of difference from the game. </p>
+      <p class="note accuracy">Drawn from measurements of your screenshots, so expect a few pixels of difference from the game.</p>
     </div>
     <details class="card vals" id="valsBox">
       <summary><h2>Values written to the pak</h2></summary>
@@ -789,6 +841,11 @@ ELEMENTS.forEach(el => {
     sides.appendChild(col);
   });
   card.appendChild(sides);
+  if (el.key === "bar") {           // the counter box belongs to the bar art, which both sides share
+    const r = document.createElement("div"); r.className = "rimrow";
+    r.innerHTML = '<label class="check"><input id="noBox" type="checkbox"> Remove the counter box</label><p class="note">Both bars share one image, so this applies to both.</p>';
+    card.appendChild(r);
+  }
   if (el.rim) {                      // trim: one image is shared by both bars, so this applies to both
     const r = document.createElement("div"); r.className = "rimrow";
     r.innerHTML = '<label class="check"><input type="checkbox" id="rimOn"> <b>Trim</b></label>' +
@@ -869,20 +926,31 @@ $("zoomFit").addEventListener("click", () => { UI.panX = 0; UI.panY = 0; setZoom
 // keep the whole preview card inside the window: the canvas shrinks (keeping 16:9) to whatever height is left
 // The preview is sized as if the values table were closed, so opening it never changes the preview.
 // An open table scrolls inside the space left between its title and the bottom of the window.
+let cvHome = null;                  // where the canvas lives in the preview card (it moves to #cvDock on narrow screens)
 function fitPreview() {
-  const cvs = $("cv"), box = cvs.closest(".sticky"), body = $("valsBody"), sum = $("valsBox").querySelector("summary");
-  const narrow = matchMedia("(max-width:1100px)").matches, MIN_CV = 120;
-  const hdr = document.querySelector("header").offsetHeight;
+  const cvs = $("cv"), box = document.querySelector(".sticky"), body = $("valsBody"), sum = $("valsBox").querySelector("summary");
+  const narrow = matchMedia("(max-width:1100px)").matches, MIN_CV = 120, head = document.querySelector("header");
+  const hdr = getComputedStyle(head).position === "sticky" ? Math.floor(head.getBoundingClientRect().height) : 0;   // rounded down so the strip tucks under the header instead of leaving a gap
   document.documentElement.style.setProperty("--hdr", hdr + "px");
-  const stuckTop = narrow ? hdr : hdr + 12, startTop = narrow ? hdr : Math.max(hdr + 12, $("controls").getBoundingClientRect().top + window.scrollY);   // where the column sits before it sticks
-  const budget = narrow ? (window.innerHeight - hdr) * 0.5 : window.innerHeight - startTop - 12;   // fits before and after scrolling
-  cvs.style.width = ""; body.style.display = "none";
+  if (!cvHome) cvHome = { parent: cvs.parentElement, next: cvs.nextSibling };
+  cvs.style.width = ""; body.style.maxHeight = "none"; $("valsBox").classList.remove("up");
+  if (narrow) {                     // full width, capped so a sideways phone still shows the controls
+    if (cvs.parentElement !== $("cvDock")) $("cvDock").appendChild(cvs);
+    const full = $("cvDock").clientWidth - 16, h = Math.max(MIN_CV, (window.innerHeight - hdr) * 0.5);
+    if (full * 9 / 16 > h) cvs.style.width = Math.floor(h * 16 / 9) + "px";
+    body.style.maxHeight = Math.round(window.innerHeight * 0.5) + "px";
+    return;
+  }
+  if (cvs.parentElement !== cvHome.parent) cvHome.parent.insertBefore(cvs, cvHome.next);
+  const stuckTop = hdr + 12, startTop = Math.max(hdr + 12, $("controls").getBoundingClientRect().top + window.scrollY);   // where the column sits before it sticks
+  const budget = window.innerHeight - startTop - 12;   // fits before and after scrolling
+  body.style.display = "none";
   const fixed = box.getBoundingClientRect().height - cvs.getBoundingClientRect().height;   // everything but the canvas, table closed
   const full = cvs.parentElement.clientWidth - 28, h = Math.max(MIN_CV, budget - fixed);
   if (full * 9 / 16 > h) cvs.style.width = Math.floor(h * 16 / 9) + "px";
   const sumBottom = sum.getBoundingClientRect().bottom - box.getBoundingClientRect().top;    // title's bottom, from the column top
-  body.style.display = ""; body.style.maxHeight = "none"; $("valsBox").classList.remove("up");
-  const below = Math.floor((narrow ? window.innerHeight * 0.7 : window.innerHeight) - stuckTop - sumBottom - 26);
+  body.style.display = "";
+  const below = Math.floor(window.innerHeight - stuckTop - sumBottom - 26);
   if (body.scrollHeight <= below) body.style.maxHeight = below + "px";     // room below: drop down as normal
   else {                                                                   // no room: open upward over the preview instead
     $("valsBox").classList.add("up");
@@ -890,6 +958,9 @@ function fitPreview() {
   }
 }
 window.addEventListener("resize", fitPreview);
+// the header's height changes when its text wraps or the web font arrives; keep the preview strip snug under it
+if (window.ResizeObserver) new ResizeObserver(() => fitPreview()).observe(document.querySelector("header"));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitPreview);
 // preview background: the theme's colour, or one the viewer picks (with a soft top-to-bottom shade)
 function bgColour() { return UI.bg || getComputedStyle(document.documentElement).getPropertyValue("--preview").trim() || "#2b3038"; }
 function shade(hex, amt) {
@@ -919,9 +990,16 @@ $("bgReset").addEventListener("click", e => { e.preventDefault(); setBg(null); }
 function setTheme(t) {
   document.documentElement.dataset.theme = t; try { localStorage.setItem("framebar-theme", t); } catch (err) {}
   document.querySelectorAll(".swatch").forEach(b => b.classList.toggle("on", b.dataset.theme === t));
+  const cur = document.querySelector('.swatch[data-theme="' + t + '"]');
+  if (cur) { $("themeDot").style.background = cur.querySelector("span").style.background; $("themeName").textContent = cur.title; }
 }
+// phones: the theme swatches live in a dropdown
+function themeMenu(open) { $("themeWrap").classList.toggle("open", open); $("themeBtn").setAttribute("aria-expanded", open ? "true" : "false"); }
+$("themeBtn").addEventListener("click", e => { e.stopPropagation(); themeMenu(!$("themeWrap").classList.contains("open")); });
+document.addEventListener("click", e => { if (!$("themeWrap").contains(e.target)) themeMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") themeMenu(false); });
 function pickTheme(t) { setTheme(t); setBg(null); }   // choosing a palette also brings the preview back to that palette
-document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => pickTheme(b.dataset.theme)));
+document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => { pickTheme(b.dataset.theme); themeMenu(false); }));
 (() => { let t = "dark"; try { t = localStorage.getItem("framebar-theme") || "dark"; } catch (err) {} if (!document.querySelector('.swatch[data-theme="' + t + '"]')) t = "dark"; setTheme(t); })();
 syncBg(); draw();
 function table() {
