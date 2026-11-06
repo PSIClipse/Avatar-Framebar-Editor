@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avatar Legends: The Fighting Game Frame Bar Editor</title>
+<style>
+:root, :root[data-theme="dark"]{
+  --preview:#2b3038;
+  --bg:#14161a; --panel:#1d2026; --panel2:#252931; --line:#343a44; --text:#e8eaed; --muted:#9aa0a8;
+  --accent:#e07a3f; --on-accent:#1a0f08; --p1:#e2763c; --p2:#4a8fe0; --on-p2:#08111c; --ok:#5fbf7a; --warn:#e0b84a; --bad:#e05a5a;
+  color-scheme:dark;
+}
+:root[data-theme="earth"]{
+  --preview:#4a4129;
+  --bg:#17150f; --panel:#211e15; --panel2:#2b271c; --line:#463f2c; --text:#eee7d4; --muted:#b0a585;
+  --accent:#7fb542; --on-accent:#121a08; --p1:#e0903f; --p2:#5aa0d8; --on-p2:#07121b; --ok:#8cc85a; --warn:#d9b44a; --bad:#e06650;
+  color-scheme:dark;
+}
+:root[data-theme="water"]{
+  --preview:#15384f;
+  --bg:#08141f; --panel:#0e1e2d; --panel2:#15283b; --line:#23405b; --text:#e1eef8; --muted:#8eafc7;
+  --accent:#3aa8f0; --on-accent:#04121d; --p1:#f39a52; --p2:#7cc6ff; --on-p2:#04121d; --ok:#5fd0a0; --warn:#f0c45a; --bad:#ff6f6f;
+  color-scheme:dark;
+}
+:root[data-theme="fire"]{
+  --preview:#43180f;
+  --bg:#190c0a; --panel:#241210; --panel2:#301816; --line:#532823; --text:#f7e6e1; --muted:#c79b92;
+  --accent:#ff5a2a; --on-accent:#1e0602; --p1:#ff9b45; --p2:#5ea8ef; --on-p2:#061321; --ok:#6fd08a; --warn:#ffc24a; --bad:#ff6a5a;
+  color-scheme:dark;
+}
+:root[data-theme="air"]{
+  --preview:#c9b98f;
+  --bg:#f6f1e6; --panel:#fffcf5; --panel2:#f0e9d8; --line:#ddd0b2; --text:#2a2317; --muted:#776a52;
+  --accent:#e39a2f; --on-accent:#2a1700; --p1:#c9601f; --p2:#2f78c4; --on-p2:#ffffff; --ok:#3d8f45; --warn:#9a6a00; --bad:#c23a2f;
+  color-scheme:light;
+}
+.themeWrap{margin-left:auto;position:relative;flex:none}
+.themeBtn{display:none}
+.themes{display:flex;gap:6px;align-items:center}
+.themes .lbl{font-size:12px;color:var(--muted);margin-right:2px}
+.swatch{width:26px;height:26px;border-radius:50%;padding:0;border:2px solid var(--line);cursor:pointer;position:relative;overflow:hidden}
+.swatch.on{outline:2px solid var(--accent);outline-offset:2px}
+.swatch span{position:absolute;inset:0;display:block}
+.picker{display:inline-flex;align-items:center;gap:8px;padding:4px 6px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);cursor:pointer;font-size:12px;color:var(--text);transition:border-color .15s}
+.picker:hover{border-color:var(--accent)}
+.picker input[type=color]{-webkit-appearance:none;appearance:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.picker input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.picker input[type=color]::-webkit-color-swatch{border:2px solid rgba(255,255,255,.35);border-radius:50%}
+.picker input[type=color]::-moz-color-swatch{border:2px solid rgba(255,255,255,.35);border-radius:50%}
+.picker code{background:none;padding:0;font-size:12px;letter-spacing:.02em;text-transform:uppercase}
+.picker .reset{border:0;background:none;padding:0 2px;color:var(--muted);font-size:14px;line-height:1;cursor:pointer}
+.picker .reset:hover{color:var(--accent)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#topStack{position:sticky;top:0;z-index:20;background:var(--bg)}
+header{background:var(--bg);padding:12px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:nowrap;white-space:nowrap;min-width:0}
+header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+header .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+/* steps the header takes, one at a time, until it fits on one line */
+header.lv1 .subMore{display:none}
+header.lv2 .themeBtn{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;font-size:13px;border-radius:999px}
+header.lv2 .themeBtn .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:inline-block}
+header.lv2 .themeBtn .caret{font-size:10px;color:var(--muted)}
+header.lv2 .themes{display:none;position:absolute;right:0;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:4px;padding:6px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:40}
+header.lv2 .themeWrap.open .themes{display:flex}
+header.lv2 .themes .lbl{display:none}
+header.lv2 .themes .swatch{width:auto;height:auto;border:0;border-radius:8px;overflow:visible;display:flex;align-items:center;gap:10px;padding:7px 10px;background:none;text-align:left;font-size:14px;color:var(--text)}
+header.lv2 .themes .swatch span{position:static;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none}
+header.lv2 .themes .swatch::after{content:attr(title)}
+header.lv2 .themes .swatch.on{outline:0;background:var(--panel2);color:var(--accent);font-weight:650}
+/* last step (phones): full title, theme button beside it, credit on its own line underneath */
+header.twoLine{flex-wrap:wrap;row-gap:2px;align-items:center}
+header.twoLine h1{white-space:normal;overflow:visible;flex:1 1 0;min-width:0}
+header.twoLine .themeWrap{align-self:flex-start}
+header.twoLine .sub{order:3;flex-basis:100%;overflow:visible}
+header h1{font-size:18px;margin:0;font-weight:650;line-height:1.35}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:clamp(380px,30vw,520px) minmax(0,1fr);gap:16px;padding:16px 20px;align-items:start}
+@media (max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.stack>*+*{margin-top:14px}
+#groups{display:flex;flex-direction:column;gap:14px}
+.card h2 .acts{display:flex;gap:10px;align-items:center;text-transform:none;letter-spacing:0;font-weight:400;flex-shrink:0;white-space:nowrap}
+.card h2 .acts .check{margin:0;font-size:12px;color:var(--text)}
+.card h2 .acts button{padding:5px 10px;font-size:12px}
+.gridbar{margin-top:8px;font-size:13px}
+.gridbar .mini{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.gridbar input[type=number]{width:76px;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 4px 4px 8px;font:inherit;font-size:13px;text-align:left}
+.gridbar .sep{width:1px;height:20px;background:var(--line)}
+.zoomctl{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.zoomctl input[type=range]{width:120px;accent-color:var(--accent)}
+.zoomctl code{min-width:34px;text-align:right;background:none;padding:0}
+#zoomFit{padding:5px 10px;font-size:12px}
+#cv{cursor:default;touch-action:none}
+#cv.pannable{cursor:grab}
+#cv.panning{cursor:grabbing}
+.guides{margin-left:auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.guide{display:inline-flex;align-items:center;gap:8px;font-size:13px}
+.guide input[type=range]{width:150px;accent-color:var(--accent)}
+.guide input[type=range]:disabled{opacity:.4}
+.guide code{min-width:52px;text-align:right;background:none;padding:0;font-size:12px;color:var(--muted)}
+.sticky{position:sticky;top:calc(var(--hdr, 0px) + 12px)}
+#cv{max-width:100%;margin-left:auto;margin-right:auto}
+#cvDock{display:none}
+/* laptops: keep the preview toolbars to two rows and give the picture the room */
+@media (max-width:1700px) and (min-width:1101px){
+  .sticky .toolbar{gap:6px 8px}
+  .sticky h2 .dim{display:none}
+  .zoomctl input[type=range]{width:84px}
+  .guides{gap:10px}
+  .guide{gap:5px}
+  .guide input[type=range]{width:84px}
+  .guide code{min-width:36px}
+  .picker{padding:3px 6px 3px 3px;gap:6px}
+  .picker input[type=color]{width:22px;height:22px}
+  .seg button{padding:5px 8px}
+}
+@media (max-width:1350px) and (min-width:1101px){
+  .picker > span{display:none}
+  .gridbar .sep{display:none}
+  .zoomctl input[type=range],.guide input[type=range]{width:70px}
+}
+@media (max-width:1450px) and (min-width:701px){header h1{font-size:16px} header .sub{font-size:12px} header{gap:12px}}
+@media (max-height:820px) and (min-width:1101px){
+  .note.accuracy{display:none}
+  main{padding-top:10px}
+  .card{padding:12px}
+}
+@media (max-width:1100px){
+  /* narrow screens: the preview picture gets its own full-width strip that stays on screen; its settings scroll with the page */
+  #cvDock{display:block;padding:8px 8px 10px;border-bottom:1px solid var(--line)}
+  #topStack{box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  #cvDock canvas{margin:0 auto}
+  .sticky{order:-1;position:static;max-height:none;overflow:visible}
+}
+@media (max-width:700px){
+  header{padding:8px 12px;gap:10px}
+  header h1{font-size:15px}
+  header .sub{font-size:12px}
+  main{padding:16px 12px}
+  #cvDock{padding:6px 4px 8px}
+}
+details.vals{padding:10px 14px}
+.valsBody{overflow:auto}
+details.vals summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.vals summary::-webkit-details-marker{display:none}
+details.vals summary::before{content:"\25B8";color:var(--muted);font-size:12px;transition:transform .15s}
+details.vals[open] summary::before{transform:rotate(90deg)}
+details.vals summary h2{margin:0}
+details.vals{position:relative}
+.valsBody{margin-top:10px}
+details.vals.up .valsBody{position:absolute;left:-1px;right:-1px;bottom:calc(100% + 6px);margin:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 -8px 24px rgba(0,0,0,.45);z-index:6}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side{border-top:3px solid var(--p1);padding-top:8px}
+.side.p2{border-top-color:var(--p2)}
+.side h3{margin:0 0 6px;font-size:13px;display:flex;align-items:center;gap:8px}
+.side h3 .tag{font-weight:700}
+.side.p1 h3 .tag{color:var(--p1)} .side.p2 h3 .tag{color:var(--p2)}
+.ctl{margin:6px 0 10px}
+.ctl .lab{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:3px}
+.ctl input[type=number]{width:96px;box-sizing:border-box;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 4px 4px 8px;font:inherit;font-size:13px;line-height:18px;text-align:left;font-variant-numeric:tabular-nums}
+.ctl input[type=number]::-webkit-inner-spin-button{margin-left:6px;height:18px}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.nudge{display:flex;gap:4px}
+.nudge button{flex:1;padding:2px 0;font-size:12px;border-radius:6px}
+.check{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font:inherit;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:650}
+button:disabled{opacity:.45;cursor:not-allowed}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.hot{border-color:var(--accent);color:var(--text)}
+.status{font-size:13px;margin-top:8px}
+.status.ok{color:var(--ok)} .status.bad{color:var(--bad)} .status.warn{color:var(--warn)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 10px}
+.seg button.on{background:var(--p2);color:var(--on-p2);font-weight:650}
+canvas{width:100%;height:auto;display:block;border-radius:8px;background:#0b0c0e;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:ui-monospace,Consolas,monospace}
+td,th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
+th{color:var(--muted);font-weight:500}
+.note{color:var(--muted);font-size:12px;margin:6px 0 0}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--panel2);padding:1px 4px;border-radius:4px}
+.dis{opacity:.4;pointer-events:none}
+.rimrow{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.rimrow .check{margin:0}
+.rimrow .rimsize{display:inline-flex;align-items:center;gap:8px;font-size:13px;flex:1;min-width:180px}
+.rimrow .rimsize input[type=range]{flex:1;accent-color:var(--accent)}
+.rimrow .rimsize code{min-width:40px;text-align:right;background:none;padding:0;color:var(--muted)}
+.rimrow .note{flex-basis:100%;margin:0}
+.simple .side.p2{display:none}
+.simple .sides{grid-template-columns:1fr}
+.simple .link-opt{display:none}
+</style>
+</head>
+<body>
+<div id="topStack">
+<header>
+  <h1>Avatar Legends: The Fighting Game Frame Bar Editor</h1>
+  <span class="sub"><span class="subMade">Made by PSIClipse</span><span class="subMore"> &middot; edits the training-mode frame bars in <code>training_timing_bar.pak</code></span></span>
+  <div class="themeWrap" id="themeWrap">
+  <button class="themeBtn" id="themeBtn" type="button" aria-haspopup="true" aria-expanded="false"><span class="dot" id="themeDot"></span><span id="themeName">Theme</span><span class="caret">&#9662;</span></button>
+  <div class="themes" role="group" aria-label="Colour theme">
+    <span class="lbl">Theme</span>
+    <button class="swatch" data-theme="dark" title="Dark"><span style="background:linear-gradient(135deg,#14161a 50%,#e07a3f 50%)"></span></button>
+    <button class="swatch" data-theme="earth" title="Earth"><span style="background:linear-gradient(135deg,#211e15 50%,#7fb542 50%)"></span></button>
+    <button class="swatch" data-theme="water" title="Water"><span style="background:linear-gradient(135deg,#0e1e2d 50%,#3aa8f0 50%)"></span></button>
+    <button class="swatch" data-theme="fire" title="Fire"><span style="background:linear-gradient(135deg,#241210 50%,#ff5a2a 50%)"></span></button>
+    <button class="swatch" data-theme="air" title="Air"><span style="background:linear-gradient(135deg,#fffcf5 50%,#e39a2f 50%)"></span></button>
+  </div>
+  </div>
+</header>
+<div id="cvDock"></div>
+</div>
+<main>
+  <div class="stack" id="controls">
+    <div class="card">
+      <h2>1. Load a pak</h2>
+      <div id="drop" class="drop">Drop <b>training_timing_bar.pak</b> here, or click to choose it.<br><span class="note">The installed pak, the original <b>.bak</b>, or one saved from this editor. The controls start from whatever you load.</span></div>
+      <input id="file" type="file" accept=".pak,.bak" hidden>
+      <div id="status" class="status">No file loaded.</div>
+    </div>
+    <div class="card">
+      <h2>2. Presets and save</h2>
+      <div class="toolbar">
+        <button id="save" class="primary" disabled>Download patched pak</button>
+        <button id="revert" disabled>Revert to loaded file</button>
+        <button id="pRec">Recommended</button>
+        <button id="pShip">Shipped</button>
+      </div>
+      <div class="check"><input id="simple" type="checkbox"><label for="simple"><b>Simple edit</b>: one set of controls; P2 follows P1 with X mirrored</label></div>
+      <p class="note">Put the download in <code>data_packages</code> as <code>training_timing_bar.pak</code>, then restart the game. <b>X</b>: + moves right, &minus; moves left. <b>Y</b>: + moves down, &minus; moves up. Element offsets are relative to where the game puts that element on its own bar.</p>
+    </div>
+    <div id="groups"></div>
+  </div>
+
+  <div class="stack sticky">
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Preview<span class="dim"> (1920 &times; 1080)</span></h2>
+        <span class="seg"><button id="vFile" disabled>Loaded file</button><button id="vEdit" class="on">Your edits</button></span>
+        <label class="mini zoomctl">Zoom <input id="zoom" type="range" min="1" max="8" step="0.25" value="1"> <code id="zoomVal">1&times;</code></label><button id="zoomFit" type="button" title="Zoom to fit the bars">Fit</button>
+        <label class="picker" title="Preview background (follows the theme until you pick a colour)">
+          <input id="bgColor" type="color" value="#2b3038"><span>Background</span><code id="bgHex">#2B3038</code>
+          <button class="reset" id="bgReset" type="button" title="Match the theme again" hidden>&#x21BA;</button>
+        </label>
+      </div>
+      <div class="toolbar gridbar">
+        <label class="check" style="margin:0"><input id="gridOn" type="checkbox"> Grid</label>
+        <label class="mini">size <input id="gridSize" type="number" min="2" max="200" step="1"> px</label>
+        <span class="sep"></span>
+        <label class="check" style="margin:0" title="Show where the game draws its matchmaking banner while it searches for a match"><input id="mmOn" type="checkbox"> Searching banner</label>
+        <div class="guides">
+          <label class="guide" title="Two dashed lines, mirrored either side of the centre"><input id="guideXOn" type="checkbox"> Margin X
+            <input id="guideX" type="range" min="0" max="960" step="0.5"><code id="guideXVal"></code></label>
+          <label class="guide" title="A dashed horizontal line at this screen height"><input id="guideYOn" type="checkbox"> Line Y
+            <input id="guideY" type="range" min="0" max="1080" step="0.5"><code id="guideYVal"></code></label>
+        </div>
+      </div>
+      <p id="viewNote" class="note"></p>
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <p class="note accuracy">Drawn from measurements of your screenshots, so expect a few pixels of difference from the game.</p>
+    </div>
+    <details class="card vals" id="valsBox">
+      <summary><h2>Values written to the pak</h2></summary>
+      <div class="valsBody" id="valsBody">
+        <table id="vals"><thead><tr><th>What</th><th>P1 / P3</th><th>P2 / P4</th></tr></thead><tbody></tbody></table>
+        <p class="note">The script uses 2048 = 1 pixel at 1080p. P3 and P4 (2v2) share P1's and P2's settings.</p>
+      </div>
+    </details>
+  </div>
+</main>
+
+<script>
+(() => {
+"use strict";
+// the game's own paks: script version 91 (launch) and 92 (Nov 2026 update; only the two version bytes differ)
+const ORIGINAL_SHA256 = { "7d4b47a8d580008747f5879c551f726daab3c787fef55a6f5b3c7114872932b4": 91,
+                          "51739e8b738a3a616287afc8066b269384473840242035f95962c2859ea0e98a": 92 };
+const PX = 2048, IMM = 0x0e10, SELF = 0xd431, CHILD = 0x0022, PARENT = 0x0021, NONE = 0xd431;
+// spare variables (file ids): persistent ones cross into the bar's later animations, locals are used at spawn time
+const V = { ilX: 182, ilY: 183, nX: 184, nY: 185, olX: 189, olY: 190, tX: 191, tY: 192, alpha: 102 };
+const OFFSCREEN = -4000;
+// shipped script regions the patch rewrites (so any pak this editor made can be edited again)
+const ORIG_SPAWNED = "560010000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c00dab4086c31d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000000e7a914231d4000008000000100e31d42200000000000000000000000000000000000000000000000000000067376c5a31d4000009000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d4220000000000000000000000000000000000000000000000000000000000000031d400006800000031d431d4220000000000000000000000000000000000000000000000000000000008000031d4000067000000100e31d4220000000000000000000000000000000000000000000000000000009700000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000006300000031d400006300000031d431d4220000000000000000000000000000000000000000000000000000000e7a914231d400008b000000100e31d4220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000009700b0000000690000000c00000031d4970031d4000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000008000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000006e005316848d31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560016000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c007c322b6331d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000007478657431d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d422000000000000000000000000000000000000000000000000000000f1b2bd5831d4000000060000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400006800000031d431d4220000000000000000000000000000000000000000000000000000000008000031d4000067000000100e31d4220000000000000000000000000000000000000000000000000000009700000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000006300000031d400006300000031d431d42200000000000000000000000000000000000000000000000000000016b0ef3931d400008b000000100e31d4220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000009700b0000000690000000c00000031d4970031d4000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000008000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000006e005316848d31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000020000031d4000031d4100e31d4000000000000000000000000000000000000000000000000000022be8e5831d400008b000000100e31d4220000000000000000000000000000000000000000000000000000002200000031d40000c100000031d431d431d4000000000000000000000000000000000000000000000000560015000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c00dab4086c31d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000000e7a914231d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d4220000000000000000000000000000000000000000000000000000000000000031d400006800000031d431d4220000000000000000000000000000000000000000000000000000000008000031d4000067000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000006300000031d400006300000031d431d42200000000000000000000000000000000000000000000000000000067376c5a31d4000009000000100e31d42200000000000000000000000000000000000000000000000000000022be8e5831d400008b000000100e31d4220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000009700b0000000690000000c00000031d4970031d4000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000008000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000006e005316848d31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000020000031d4000031d4100e31d4000000000000000000000000000000000000000000000000000016b0ef3931d400008b000000100e31d42200000000000000000000000000000000000000000000000000";     // 0x4149 .. 0x4c75 (65 records)
+const ORIG_FRAME = "00000006000031d4000066000000100e31d431d4000000000000000000000000000000000000000000000000560005000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c00422f2dee31d4000031d40000100e31d431d400000000000000000000000000000000000000000000000000000072616231d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d42200000000000000000000000000000000000000000000000000010067000000001000006700000031d4100e220000000000000000000000000000000000000000000000000000009700000031d400009700000031d431d4220000000000000000000000000000000000000000000000000000001f00000031d400001f00000031d431d4220000000000000000000000000000000000000000000000000056000f000000000000000100000031d431d431d40000000000000000000000000000000000000000000000005c003fbea87031d4000031d40000100e31d431d40000000000000000000000000000000000000000000000000000649e330a31d4000008000000100e31d4220000000000000000000000000000000000000000000000000000000000000031d400008a00000031d431d422000000000000000000000000000000000000000000000000000000955efc3131d400008b000000100e31d42200000000000000000000000000000000000000000000000000010067000000001000006700000031d4100e220000000000000000000000000000000000000000000000000000000008000031d400004a000000100e31d4220000000000000000000000000000000000000000000000000000000000007031d4000000060000100e31d4220000000000000000000000000000000000000000000000000000000028000031d400008e000000100e31d422000000000000000000000000000000000000000000000000006e004ebf5f5b31d40000b0000000100e31d42200000000000000000000000000000000000000000000000000560001000000000000000300000031d431d431d400000000000000000000000000000000000000000000000040001f0000000018000031d4000031d4100e31d40000000000000000000000000000000000000000000000004b0031d4000031d4000031d4000031d431d431d400000000000000000000000000000000000000000000000040001f0000000020000031d4000031d4100e31d400000000000000000000000000000000000000000000000002000040000031d400008e000000100e31d4220000000000000000000000000000000000000000000000000033006900000031d400000c000000970031d431d400000000000000000000000000000000000000000000000004000c00000031d400000006000031d431d42200000000000000000000000000000000000000000000000000";         // 0x50c9 .. 0x5515 (25 records)
+const FRAME_SHIPPED = b64("GAAAAAAAAAAAAQAAAAA4ZDIwZDQ1ZgAAAAAGMQAAACFzcmMvc3ByaXRlcy90cmFpbmluZ190aW1pbmdfYmFyL2ZyYW1lcy9mcmFtZS5wbmcKAAAACgAAAGwDAABIAAAAgQMAAF0AAAD8AwAARAAAAAAAAAAcAAAAAwAAAB4AAAACAAAAIgAAAFQAAAD///8PAADgAAAADgEAAADABAAAwDsEALgEAAAfAAEA///////////////////tH/8EAOsP8A///////////////////////////////////////////wIf/wQA//////////////////9mD/AP/20P7A///////////////////2gP9A9hD2wB+Q7sDw/0D///////////////////zQ/wD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////5HwDwD////////////////////+4P9A/////tX/4AAAD9BAD/iRP+BAAPZAT///8UH/7gBv///6MPzAP/6g/wD/9pDwEA/////////////////z8P8A///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////4cPmAH//g8BAP4PiBL////////////////4D/AP//////////////////////////////////////////////////////////////////////////////////////////////////////////9VHwDsD////////////////////g/wD90P9A//Eg8BAP//////////////////Kw9gDv//////////////////Ww/wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////dlAAAAAAAA=="), FRAME_NOBOX = b64("GAAAAAAAAAAAAQAAAAA4ZDIwZDQ1ZgAAAAAGMQAAACFzcmMvc3ByaXRlcy90cmFpbmluZ190aW1pbmdfYmFyL2ZyYW1lcy9mcmFtZS5wbmcKAAAACgAAAGwDAABIAAAAgQMAAF0AAAD8AwAARAAAAAAAAAAcAAAAAwAAAB4AAAACAAAAIgAAAFQAAAD///8PAADgAAAADgEAAACHBAAAwDsEAH8EAAAfAAEA////////////////////////////////////////////////////////////////Ax//BAD/////////////////5g/sD////////////////////+sEBAAP7A/////////////////////oBAQAD/AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////eDhDvDwT//////////////////////////95f/gAAAP0EAP+JE/4EAA9kBP///xQf/uAG////ow/MA/9kDwEA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1FAAAAAAAA==");
+function b64(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+const hexBytes = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+const SPAWNED = hexBytes(ORIG_SPAWNED), FRAMEREG = hexBytes(ORIG_FRAME);
+
+// ---------- frame image (.munged): 167-byte header + one LZ4 block of 1020 x 68 RGBA pixels ----------
+const IMG_W = 1020, IMG_H = 68, IMG_HDR = 167;
+const u32 = (b, o) => (b[o] | b[o + 1] << 8 | b[o + 2] << 16 | b[o + 3] << 24) >>> 0;
+function lz4Decode(src, outLen) {
+  const out = new Uint8Array(outLen); let i = 0, o = 0;
+  while (i < src.length) {
+    const tok = src[i++]; let n = tok >> 4;
+    if (n === 15) { let b; do { b = src[i++]; n += b; } while (b === 255); }
+    out.set(src.subarray(i, i + n), o); i += n; o += n;
+    if (i >= src.length) break;
+    const off = src[i] | src[i + 1] << 8; i += 2;
+    let m = tok & 15; if (m === 15) { let b; do { b = src[i++]; m += b; } while (b === 255); }
+    m += 4; for (let k = 0; k < m; k++, o++) out[o] = out[o - off];
+  }
+  if (o !== outLen) throw new Error("The frame image in this pak couldn't be read.");
+  return out;
+}
+function lz4Encode(src) {           // greedy LZ4 block encoder (valid for any LZ4 block decoder)
+  const n = src.length, out = new Uint8Array(n + Math.ceil(n / 255) + 32), tab = new Int32Array(1 << 16).fill(-1);
+  let o = 0, anchor = 0, i = 0;
+  const lenBytes = v => { while (v >= 255) { out[o++] = 255; v -= 255; } out[o++] = v; };
+  const h = p => (Math.imul(src[p] | src[p + 1] << 8 | src[p + 2] << 16 | src[p + 3] << 24, 2654435761) >>> 16);
+  const emit = (lit, mlen, off) => {
+    const L = lit, M = mlen - 4;
+    out[o++] = (Math.min(L, 15) << 4) | (mlen ? Math.min(M, 15) : 0);
+    if (L >= 15) lenBytes(L - 15);
+    out.set(src.subarray(anchor, anchor + L), o); o += L;
+    if (mlen) { out[o++] = off & 255; out[o++] = off >> 8; if (M >= 15) lenBytes(M - 15); }
+  };
+  const limit = n - 12;               // the last match must start 12+ bytes before the end
+  while (i < limit) {
+    const k = h(i), c = tab[k]; tab[k] = i;
+    if (c >= 0 && i - c <= 65535 && src[c] === src[i] && src[c + 1] === src[i + 1] && src[c + 2] === src[i + 2] && src[c + 3] === src[i + 3]) {
+      let m = 4; while (i + m < n - 5 && src[c + m] === src[i + m]) m++;
+      emit(i - anchor, m, i - c); i += m; anchor = i;
+    } else i++;
+  }
+  emit(n - anchor, 0, 0);           // final literals
+  return out.slice(0, o);
+}
+const imgPixels = munged => lz4Decode(munged.subarray(IMG_HDR), u32(munged, 159));
+function imgMunged(header, px) {    // header copied from the shipped image, sizes updated
+  const c = lz4Encode(px), out = new Uint8Array(IMG_HDR + c.length), dv = new DataView(out.buffer);
+  out.set(header.subarray(0, IMG_HDR)); out.set(c, IMG_HDR);
+  dv.setUint32(155, c.length + 8, true); dv.setUint32(159, px.length, true); dv.setUint32(163, c.length, true);
+  return out;
+}
+// Trim: colour the art's edge. size 1 = the opaque pixels touching transparency; larger sizes grow
+// inward and outward in turn (2 = 1 in + 1 out, 3 = 2 in + 1 out, ...).
+function applyRim(src, hex, size) {
+  const px = src.slice(), N = IMG_W * IMG_H, r = parseInt(hex.slice(1, 3), 16), gC = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const inD = Math.ceil(size / 2), outD = Math.floor(size / 2);
+  const dist = (opaque, depth) => {        // 4-neighbour distance (1..depth) from the other kind of pixel
+    const d = new Uint8Array(N); let front = [];
+    const isOp = i => src[i * 4 + 3] > 0;
+    for (let i = 0; i < N; i++) {
+      if (isOp(i) !== opaque) continue;
+      const x = i % IMG_W, y = (i / IMG_W) | 0;
+      const nb = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]];
+      if (nb.some(([a, c]) => a < 0 || c < 0 || a >= IMG_W || c >= IMG_H ? opaque : isOp(c * IMG_W + a) !== opaque)) { d[i] = 1; front.push(i); }
+    }
+    for (let k = 2; k <= depth; k++) {
+      const next = [];
+      front.forEach(i => { const x = i % IMG_W, y = (i / IMG_W) | 0;
+        [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(([a, c]) => {
+          if (a < 0 || c < 0 || a >= IMG_W || c >= IMG_H) return;
+          const j = c * IMG_W + a; if (!d[j] && isOp(j) === opaque) { d[j] = k; next.push(j); } }); });
+      front = next;
+    }
+    return d;
+  };
+  [[true, inD], [false, outD]].forEach(([opq, depth]) => {
+    if (depth < 1) return;
+    const d = dist(opq, depth);
+    for (let i = 0; i < N; i++) if (d[i]) { px[i * 4] = r; px[i * 4 + 1] = gC; px[i * 4 + 2] = b; px[i * 4 + 3] = 255; }
+  });
+  return px;
+}
+const BASE_PX = { nobox: null, shipped: null };
+const basePx = k => BASE_PX[k] || (BASE_PX[k] = imgPixels(k === "nobox" ? FRAME_NOBOX : FRAME_SHIPPED));
+let imgCache = { key: "", bytes: null };
+function frameImage(s) {
+  const k = s.noBox ? "nobox" : "shipped", key = k + (s.rim.on ? "|" + s.rim.color + "|" + s.rim.size : "");
+  if (imgCache.key === key) return imgCache.bytes;
+  const bytes = s.rim.on ? imgMunged(k === "nobox" ? FRAME_NOBOX : FRAME_SHIPPED, applyRim(basePx(k), s.rim.color, s.rim.size))
+                         : (k === "nobox" ? FRAME_NOBOX : FRAME_SHIPPED);
+  imgCache = { key, bytes }; return bytes;
+}
+function readImage(munged) {        // -> { noBox, rim } recovered from a pak's frame image
+  let px; try { px = imgPixels(munged); } catch (err) { return null; }
+  const same = (a, b2) => a.length === b2.length && a.every((v, i) => v === b2[i]);
+  for (const k of ["nobox", "shipped"]) {
+    const bp = basePx(k), noBox = k === "nobox";
+    if (same(px, bp)) return { noBox, rim: RIM_OFF() };
+    let first = -1; for (let i = 0; i < px.length; i += 4) if (px[i] !== bp[i] || px[i + 1] !== bp[i + 1] || px[i + 2] !== bp[i + 2] || px[i + 3] !== bp[i + 3]) { first = i; break; }
+    if (first < 0) continue;
+    const hex = "#" + [px[first], px[first + 1], px[first + 2]].map(v => v.toString(16).padStart(2, "0")).join("");
+    for (let sz = 1; sz <= 8; sz++) if (same(applyRim(bp, hex, sz), px)) return { noBox, rim: { on: true, color: hex, size: sz } };
+  }
+  return null;
+}
+
+// ---------- settings model ----------
+const ELEMENTS = [
+  { key: "bar", name: "Bar", show: false, fields: [["x", "X (from screen centre)", -960, 960], ["y", "Row height (screen y)", 600, 1080]] },
+  { key: "outline", name: "Outline", show: true, noSnap: true, rim: true,
+    fields: [["op", "Opacity (%)", 0, 100, { step: 1, nudges: [-10, -5, -1, 1, 5, 10] }]] },
+  { key: "counts", name: "Frame counts", show: false, fields: [], checks: [["raised", "Raise above the strip"]] },
+  { key: "inner", name: "Inner label", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "outer", name: "Outer label", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "num", name: "Frame advantage", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] },
+  { key: "tag", name: "P1/P2 beside the frame advantage", show: true, fields: [["x", "X offset", -1000, 1000], ["y", "Y offset", -600, 600]] }
+];
+const SHIPPED_OP = 75;                                   // the game's own outline alpha (1536 / 2048)
+const side = (bx, by, o) => ({ bar: { x: bx, y: by }, outline: { on: true, op: SHIPPED_OP }, counts: { raised: false },
+  inner: { on: true, x: 0, y: 0 }, outer: o.outer, num: o.num, tag: o.tag });
+const RIM_OFF = () => ({ on: false, color: "#c9a862", size: 1 });
+function normalise(s) {             // fill in settings that older saves don't have
+  ["p1", "p2"].forEach(p => {
+    const t = s[p];
+    t.outline = Object.assign({ on: true, op: SHIPPED_OP }, t.outline);
+    t.counts = Object.assign({ raised: false }, t.counts);
+  });
+  s.rim = Object.assign(RIM_OFF(), s.rim);
+  return s;
+}
+const PRESETS = {
+  shipped: () => ({ noBox: false, rim: RIM_OFF(),
+    p1: side(-450, 991, { outer: { on: false, x: 0, y: 0 }, num: { on: true, x: 0, y: 0 }, tag: { on: false, x: 0, y: 0 } }),
+    p2: side(450, 991, { outer: { on: false, x: 0, y: 0 }, num: { on: true, x: 0, y: 0 }, tag: { on: false, x: 0, y: 0 } }) }),
+  recommended: () => { const r = { noBox: true, rim: { on: true, color: "#c9a862", size: 1 },
+    p1: side(0, 920.5, { outer: { on: true, x: 0, y: -25 }, num: { on: true, x: -865, y: 41.5 }, tag: { on: true, x: -892, y: 19.5 } }),
+    p2: side(0, 953.5, { outer: { on: true, x: 0, y: -25 }, num: { on: true, x: 865, y: 8.5 }, tag: { on: true, x: 892, y: -13.5 } }) };
+    r.p1.inner = { on: true, x: -10, y: 4 }; r.p2.inner = { on: true, x: 11, y: 4 };   // line up with the outer labels on each end
+    r.p1.outline.op = r.p2.outline.op = 85;
+    return r; }
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+let S = PRESETS.shipped(), fileS = null, fileKind = null, view = "default";   // "default" = untouched start-up view
+let base = null, sprOff = 0, frameEntry = null;
+const UI = { zoom: 1, panX: 0, panY: 0, bg: null, simple: false, link: {}, snap: {},
+  grid: { on: false, size: 10, gxOn: false, gx: 400, gyOn: false, gy: 937.5, mm: false } };   // bg null = follow the theme
+try { Object.assign(UI.grid, JSON.parse(localStorage.getItem("framebar-grid") || "{}")); } catch (err) {}
+// Screen position of the thing a value moves (the bar centre, a label's anchor, the number's centre).
+function screenPos(p, key, axis) {
+  const G = geo(S, p);
+  if (key === "bar") return axis === "x" ? G.cx : G.y;
+  return G[key][axis];
+}
+function snapTargets(axis) {
+  const t = [];
+  if (axis === "x" && UI.grid.gxOn) t.push(960 - UI.grid.gx, 960 + UI.grid.gx);
+  if (axis === "y" && UI.grid.gyOn) t.push(UI.grid.gy);
+  return t;
+}
+// Snap a new value so its screen position lands on the grid or a margin line.
+// dir 0 = nearest; +1/-1 (a nudge button) = the next line in that direction.
+function snapValue(p, key, axis, v, dir) {
+  const cur = S[p][key][axis], base = screenPos(p, key, axis) - cur, pos = base + v;
+  const lines = snapTargets(axis), size = UI.grid.size;
+  if (UI.grid.on && size > 0) {
+    const from = base + cur, lo = Math.floor(Math.min(from, pos) / size) - 2, hi = Math.ceil(Math.max(from, pos) / size) + 2;
+    for (let i = lo; i <= hi; i++) lines.push(i * size);
+  }
+  if (!lines.length) return v;
+  let best;
+  if (dir) {
+    const from = base + cur;
+    const ahead = lines.filter(l => dir > 0 ? l > from + 0.01 : l < from - 0.01).sort((a, b) => dir > 0 ? a - b : b - a);
+    best = ahead.length ? ahead[0] : pos;
+  } else {
+    const guides = snapTargets(axis), near = guides.filter(l => Math.abs(l - pos) <= 8);
+    best = near.length ? near[0] : lines.reduce((a, b) => Math.abs(b - pos) < Math.abs(a - pos) ? b : a);
+  }
+  return Math.round((best - base) * 2) / 2;
+}
+const linked = key => UI.simple || !!UI.link[key];
+// Put the P1/P2 tag right beside its frame advantage number, on the side facing the bar.
+function placeTagNextToNumber(q) {
+  const G = geo(S, q), c = CAL[q], t = S[q];
+  const towardBar = G.num.x < G.cx ? 1 : -1, GAP = 24;
+  t.tag.x = Math.round((t.num.x + (c.num - c.tag) + towardBar * GAP) * 2) / 2;
+  t.tag.y = t.num.y - 22;
+}
+try { UI.bg = localStorage.getItem("framebar-bg") || null; } catch (err) {}
+try { UI.simple = localStorage.getItem("framebar-simple") === "1"; } catch (err) {}
+
+// ---------- calibrated screen model (1080p) ----------
+const rowFromY = y => 541 - y, rowY = r => 541 - r;
+// Calibrated against an in-game 1080p screenshot of the version 10 layout. Offsets from the bar centre (cx) and row (y);
+// "in" = the inner end (P1: right, P2: left). P1 and P2 differ by a pixel or two because the art isn't perfectly symmetric.
+const CAL = {
+  p1: { inner: 402, tag: 400.5, num: 400.5, outerEdge: -386.5, outerDy: 26 },
+  p2: { inner: -403, tag: -403, num: -406, outerEdge: 384, outerDy: 25.5 },
+  innerDy: -3.5, numDy: -27.5, tagDy: -2.5,
+  stripL: -376, seg: 10, pitch: 12, segs: 63, segH: 13,
+  outL: -422, outR: 421, outH: 17, countDy: 17.5, countRaise: 35
+};
+const BOX_IN = 382, BOX_OUT = 452, BOX_TOP = -16, BOX_BOT = 59;     // shipped counter box (approximate)
+function geo(s, p) {            // screen positions of everything on one side
+  const t = s[p], m = p === "p1" ? -1 : 1, cx = 960 + t.bar.x, y = t.bar.y, c = CAL[p];
+  const g = { cx, y, m,
+    inner: { x: cx + c.inner + t.inner.x, y: y + CAL.innerDy + t.inner.y },
+    num: { x: cx + c.num + t.num.x, y: y + CAL.numDy + t.num.y },
+    tag: { x: cx + c.tag + t.tag.x, y: y + CAL.tagDy + t.tag.y },
+    outer: { x: cx + c.outerEdge + t.outer.x, y: y + c.outerDy + t.outer.y } };
+  g.outerAlign = g.outer.x < cx ? "right" : "left";
+  g.tagAlign = g.tag.x < g.num.x ? "right" : "left";
+  return g;
+}
+
+// ---------- pak helpers ----------
+function readPak(u8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  if (String.fromCharCode(u8[0], u8[1], u8[2], u8[3]) !== "PACK") throw new Error("This isn't a PACK archive.");
+  const dirOff = dv.getUint32(4, true), dirLen = dv.getUint32(8, true);
+  let spr = null, frame = null;
+  for (let i = 0; i < dirLen / 256; i++) {
+    const e = dirOff + i * 256; let name = "";
+    for (let k = 0; k < 248 && u8[e + k]; k++) name += String.fromCharCode(u8[e + k]);
+    if (name.endsWith("training_timing_bar.sprbin")) spr = dv.getUint32(e + 248, true);
+    if (name.endsWith("training_timing_bar~frames~frame.munged")) frame = { dirEntry: e, off: dv.getUint32(e + 248, true), len: dv.getUint32(e + 252, true) };
+  }
+  if (spr === null || !frame) throw new Error("This pak isn't the training timing bar pak.");
+  return { spr, frame };
+}
+function Fr(rec) {
+  const dv = new DataView(rec.buffer, rec.byteOffset, 44);
+  return [dv.getUint16(0, true), dv.getInt32(2, true), dv.getInt32(6, true), dv.getInt32(10, true),
+          dv.getUint16(14, true), dv.getUint16(16, true), dv.getUint16(18, true)];
+}
+const F = (u8, o) => Fr(u8.subarray(sprOff + o, sprOff + o + 44));
+function R(o) {                     // shipped record at script offset o
+  if (o >= 0x4149 && o < 0x4c75) return SPAWNED.slice(o - 0x4149, o - 0x4149 + 44);
+  if (o >= 0x50c9 && o < 0x5515) return FRAMEREG.slice(o - 0x50c9, o - 0x50c9 + 44);
+  return base.slice(sprOff + o, sprOff + o + 44);
+}
+function build(f) {
+  const b = new Uint8Array(44), dv = new DataView(b.buffer);
+  dv.setUint16(0, f[0], true); dv.setInt32(2, f[1] | 0, true); dv.setInt32(6, f[2] | 0, true); dv.setInt32(10, f[3] | 0, true);
+  dv.setUint16(14, f[4], true); dv.setUint16(16, f[5], true); dv.setUint16(18, f[6], true);
+  return b;
+}
+const withA = (rec, a) => { const f = Fr(rec); f[1] = a; return build(f); };
+function i32(x) { x = Math.round(x); if (x > 2147483647 || x < -2147483648) throw new Error("A value is out of range."); return x; }
+const half = x => Math.round(x * 2) / 2;
+const eq = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+// record builders
+const set = (v, varId) => build([0, i32(v), NONE, varId, IMM, SELF, SELF]);                 // own var = constant
+const copyToChild = (varId, childVar) => build([0, varId, NONE, childVar, SELF, SELF, CHILD]); // child var = own var
+const isSide = a => build([64, 31, a, NONE, SELF, IMM, SELF]);                               // Var8 == player slot
+const ALWAYS = build([228, 31, NONE, NONE, SELF, SELF, SELF]), NEVER = build([64, 31, 0x7fff0000, NONE, SELF, IMM, SELF]);
+const OR = () => R(0x43dd);
+const NOOP = build([0, 0, NONE, 12, IMM, SELF, SELF]);
+const hdr = (body, conds) => build([86, body, 0, conds, SELF, SELF, SELF]);
+function sideConds(p1, p2) {        // 3-record condition: which sides this applies to (P3/P4 follow P1/P2)
+  if (p1 && p2) return [ALWAYS, OR(), ALWAYS];
+  if (p1) return [isSide(2048), OR(), isSide(6144)];
+  if (p2) return [isSide(4096), OR(), isSide(8192)];
+  return [NEVER, OR(), NEVER];
+}
+
+function detect(u8) {
+  const shipped = [[0xd775d, 1, -921600], [0xd7839, 1, 921600], [0xd78e9, 2, 4096], [0xd7915, 1, -921600],
+                   [0xd796d, 2, 6144], [0xd79f1, 1, -880640], [0x6fd0, 1, -102400], [0x6e44, 3, 31], [0x50c9, 1, 1536]];
+  if (shipped.every(([o, i, v]) => F(u8, o)[i] === v) && F(u8, 0x4175)[0] === 92) return "original";
+  const f = F(u8, 0x6e44);
+  if (f[0] === 0 && f[1] === V.nX && f[4] === PARENT && f[3] === 141) return "v3";
+  if (f[0] === 26 && F(u8, 0x6fd0)[0] === 23 && F(u8, 0x45ed)[0] === 26 && F(u8, 0x48ad)[0] === 228 && F(u8, 0xd775d)[1] === -F(u8, 0xd7839)[1]) return "v1";
+  return "unknown";
+}
+function shownBy(u8, o) {           // read a sideConds() triple back
+  const a = F(u8, o), b = F(u8, o + 88);
+  const val = f => f[0] === 228 ? "all" : f[0] === 64 && f[2] === 0x7fff0000 ? "none" : f[0] === 64 ? f[2] : "?";
+  const x = val(a);
+  return x === "all" ? [true, true] : x === "none" ? [false, false] : x === 2048 ? [true, false] : x === 4096 ? [false, true] : [true, true];
+}
+function readV3(u8) {
+  const im = readImage(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len)) || { noBox: true, rim: RIM_OFF() };
+  const s = { noBox: im.noBox, rim: im.rim, p1: {}, p2: {} };
+  const rows = { p1: F(u8, 0xd7915)[1] / PX, p2: F(u8, 0xd79f1)[1] / PX };
+  const xs = { p1: F(u8, 0xd775d)[1] / PX, p2: F(u8, 0xd7839)[1] / PX };
+  ["p1", "p2"].forEach((p, i) => {
+    const o = 0x4149 + i * 13 * 44 + 4 * 44, val = k => F(u8, o + k * 44)[1] / PX;   // body after hdr + 3 conds
+    const t = s[p];
+    t.bar = { x: half(xs[p]), y: half(rowY(rows[p])) };
+    const hid = v => v <= OFFSCREEN + 1;
+    const el = (vx, vy, flip) => ({ on: !hid(vy), x: half(vx), y: hid(vy) ? 0 : half(flip ? -vy : 5 - vy) });
+    t.inner = el(val(0), val(1)); t.num = el(val(2), val(3), true); t.outer = el(val(4), val(5)); t.tag = el(val(6), val(7));
+    const a = F(u8, o + 8 * 44)[1];
+    t.outline = { on: a !== 0, op: a ? Math.round(a * 100 / 2048) : SHIPPED_OP };
+  });
+  s.p1.counts = { raised: F(u8, 0x9020)[0] === 64 && F(u8, 0x9020)[2] === 2048 };
+  s.p2.counts = { raised: F(u8, 0x9078)[0] === 64 && F(u8, 0x9078)[2] === 4096 };
+  return normalise(s);
+}
+function readV1(u8) {               // version 6/7 builds -> per-side values
+  const a = F(u8, 0xd7839)[1], ROW1 = F(u8, 0xd7915)[1] / PX, ROW2 = F(u8, 0xd79f1)[1] / PX;
+  const y1 = rowY(ROW1), y2 = rowY(ROW2), spread = a > 2 ? a / PX : 0;
+  const numX = F(u8, 0x6e44)[2] * a / (PX * PX), numUp = F(u8, 0x6fd0)[1] / PX - ROW1 + 29;
+  const tagX = F(u8, 0x45ed)[2] * a / (PX * PX), tagUp = F(u8, 0x45c1)[1] / PX - ROW1 - 5;
+  const outerUp = F(u8, 0x4301)[1] / PX - 30, outerOn = F(u8, 0x4175)[0] === 92, tagOn = F(u8, 0x448d)[0] === 92;
+  const gap = y2 - y1;
+  return normalise({ noBox: eq(u8.subarray(frameEntry.off, frameEntry.off + frameEntry.len), FRAME_NOBOX),
+    p1: side(-spread, half(y1), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(-numX), y: half(25 - numUp) }, tag: { on: tagOn, x: Math.round(-tagX), y: half(-tagUp) } }),
+    p2: side(spread, half(y2), { outer: { on: outerOn, x: 0, y: half(-25 - outerUp) }, num: { on: true, x: Math.round(numX), y: half(25 - numUp - gap) }, tag: { on: tagOn, x: Math.round(tagX), y: half(-tagUp - gap) } }) });
+}
+
+// ---------- the patch ----------
+function patch() {
+  const p = base.slice();
+  const W = (o, rec) => p.set(rec, sprOff + o);
+  const setField = (o, i, v) => { const f = Fr(R(o)); f[i] = i32(v); W(o, build(f)); };
+  const P1 = S.p1, P2 = S.p2;
+
+  // bar placement (HUD_TrainingInfo / PlayerData): X per side, rows split P1/P3 and P2/P4
+  setField(0xd775d, 1, P1.bar.x * PX); setField(0xd7839, 1, P2.bar.x * PX);
+  setField(0xd78e9, 2, 6144); setField(0xd7915, 1, rowFromY(P1.bar.y) * PX);
+  setField(0xd796d, 2, 4096); setField(0xd79f1, 1, rowFromY(P2.bar.y) * PX);
+
+  // "Spawned" region (0x4149, 65 records): per-side setup, outer label, number tag, padding
+  const out = [];
+  [["p1", 2048, 6144], ["p2", 4096, 8192]].forEach(([k, a, b]) => {
+    const t = S[k];
+    out.push(hdr(9, 3), isSide(a), OR(), isSide(b),
+      set(t.inner.x * PX, V.ilX), set((t.inner.on ? 5 - t.inner.y : OFFSCREEN) * PX, V.ilY),
+      set(t.num.x * PX, V.nX), set((t.num.on ? -t.num.y : OFFSCREEN) * PX, V.nY),
+      set(t.outer.x * PX, V.olX), set((t.outer.on ? 5 - t.outer.y : OFFSCREEN) * PX, V.olY),
+      set(t.tag.x * PX, V.tX), set((t.tag.on ? 5 - t.tag.y : OFFSCREEN) * PX, V.tY),
+      set(t.outline.on ? Math.round(t.outline.op * 2048 / 100) : 0, V.alpha));
+  });
+  const g1 = geo(S, "p1"), g2 = geo(S, "p2");
+  const growNest = (l1, l2) => [build([86, 1, 0, 3, SELF, SELF, SELF]), ...sideConds(l1, l2), R(0x4435)];
+  const label = (attach, vx, vy, left1, left2) => [hdr(15, 1), R(0x5255),
+    R(0x5281), R(0x52ad), attach, R(0x5305), R(0x5331), R(0x535d),
+    copyToChild(vy, 142), copyToChild(vx, 141), ...growNest(left1, left2), R(0x54bd), R(0x54e9)];
+  out.push(...label(withA(R(0x52d9), Fr(R(0x42d5))[1]), V.olX, V.olY, g1.outerAlign === "right", g2.outerAlign === "right"));
+  out.push(...label(R(0x52d9), V.tX, V.tY, g1.tagAlign === "right", g2.tagAlign === "right"));
+  while (out.length < 65) out.push(NOOP);
+  if (out.length !== 65) throw new Error("Layout check failed (spawn region).");
+  out.forEach((rec, i) => W(0x4149 + i * 44, rec));
+
+  // frame.ani: alpha now comes from the setup block; inner label reads its offset from the persistent vars
+  W(0x50c9, NOOP);
+  // The inner label spawns before the setup block runs, so it can't read the vars. Instead it computes
+  // offset = a + slot*b from Var8 (slot 1 = P1, 2 = P2), which gives each side its exact value.
+  const iy = k => (S[k].inner.on ? 5 - S[k].inner.y : OFFSCREEN) * PX, ix = k => S[k].inner.x * PX;
+  const lin = (v1, v2, childVar) => [build([26, 31, i32(v2 - v1), childVar, SELF, IMM, CHILD]),   // child = slot * b
+                                     build([2, i32(2 * v1 - v2), NONE, childVar, IMM, SELF, CHILD])]; // child += a
+  const inner = [hdr(15, 1), R(0x5255),
+    R(0x5281), R(0x52ad), R(0x52d9), R(0x5305), R(0x5331), R(0x535d),
+    ...lin(iy("p1"), iy("p2"), 142), ...lin(ix("p1"), ix("p2"), 141), R(0x53b5), R(0x54bd), R(0x54e9), R(0x5331), R(0x5331)];
+  if (inner.length !== 17) throw new Error("Layout check failed (inner label block).");
+  inner.forEach((rec, i) => W(0x5229 + i * 44, rec));
+
+  // bar.ani: the +/- number takes its offset from the parent frame's vars
+  W(0x6e44, build([0, V.nX, NONE, 141, PARENT, SELF, CHILD]));
+  W(0x6fd0, build([0, V.nY, NONE, 142, PARENT, SELF, CHILD]));
+
+  // frame counts: the game raises a bar's counts 35 px only for P3/P4; the toggle extends that to P1 or P2.
+  // The FrameTimingNumber flag makes the game place the counts itself, so it's swapped for a harmless
+  // duplicate of the MonoSpace flag whenever a side is raised.
+  const raise1 = S.p1.counts.raised, raise2 = S.p2.counts.raised;
+  W(0x9020, isSide(raise1 ? 2048 : 6144));
+  W(0x9078, isSide(raise2 ? 4096 : 8192));
+  W(0xd0905, raise1 || raise2 ? R(0xd0931) : build([110, 2094855179, NONE, 176, IMM, SELF, CHILD]));
+  W(0xd08ad, build([0, -20480, NONE, 142, IMM, SELF, CHILD]));    // shipped child offset (a test build changed it)
+
+  // frame image (with the optional trim); it moves to the end of the pak if it outgrows its slot
+  const img = frameImage(S);
+  const dv0 = new DataView(base.buffer, base.byteOffset, base.byteLength);
+  const dirOff = dv0.getUint32(4, true), dirLen = dv0.getUint32(8, true);
+  let slotEnd = dirOff;
+  for (let i = 0; i < dirLen / 256; i++) { const o = dv0.getUint32(dirOff + i * 256 + 248, true); if (o > frameEntry.off && o < slotEnd) slotEnd = o; }
+  if (frameEntry.off + img.length <= slotEnd) {
+    p.fill(0, frameEntry.off, slotEnd);
+    p.set(img, frameEntry.off);
+    new DataView(p.buffer).setUint32(frameEntry.dirEntry + 252, img.length, true);
+    return p;
+  }
+  const al = x => Math.ceil(x / 4096) * 4096, imgOff = al(dirOff), newDir = al(imgOff + img.length);
+  const q = new Uint8Array(newDir + dirLen); q.set(p.subarray(0, dirOff));
+  q.fill(0, frameEntry.off, slotEnd);
+  q.set(img, imgOff); q.set(p.subarray(dirOff, dirOff + dirLen), newDir);
+  const dq = new DataView(q.buffer);
+  dq.setUint32(4, newDir, true);
+  const e = newDir + (frameEntry.dirEntry - dirOff);
+  dq.setUint32(e + 248, imgOff, true); dq.setUint32(e + 252, img.length, true);
+  return q;
+}
+
+// ---------- preview ----------
+const cv = document.getElementById("cv"), g = cv.getContext("2d");
+function txt(s, x, y, size, align, color, weight) {
+  g.font = (weight || 700) + " " + size + "px system-ui, 'Segoe UI', sans-serif";
+  g.textAlign = align; g.textBaseline = "middle";
+  g.lineWidth = Math.max(2, size / 7); g.strokeStyle = "rgba(0,0,0,.85)"; g.strokeText(s, x, y);
+  g.fillStyle = color; g.fillText(s, x, y);
+}
+function rrectPath(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function rrect(x, y, w, h, r) { rrectPath(x, y, w, h, r); g.fill(); }
+const COLORS = { p1: i => i < 6 ? "#3474c4" : i < 33 ? "#55b865" : i < 40 ? "#e01414" : "#3474c4", p2: i => i < 40 ? "#e14fc8" : i < 48 ? "#d8d018" : "#c4c6cc" };
+function drawSide(s, p, counters) {
+  const t = s[p], G = geo(s, p), L = G.cx + CAL.stripL, Rr = L + (CAL.segs - 1) * CAL.pitch + CAL.seg;
+  if (t.outline.on) {
+    const a = Math.max(0, Math.min(100, t.outline.op)) / 100, rim = s.rim || RIM_OFF();
+    const innerEnd = G.m < 0 ? G.cx + CAL.outR : G.cx + CAL.outL;
+    const outerEnd = s.noBox ? (G.m < 0 ? G.cx + CAL.outL : G.cx + CAL.outR) : (G.m < 0 ? L - 4 : Rr + 4);
+    const shapes = [[Math.min(innerEnd, outerEnd), G.y - (CAL.outH - 1) / 2, Math.abs(outerEnd - innerEnd) + 1, CAL.outH]];
+    if (!s.noBox) {
+      const bx0 = G.m < 0 ? G.cx - BOX_OUT : G.cx + BOX_IN, bx1 = G.m < 0 ? G.cx - BOX_IN : G.cx + BOX_OUT;
+      shapes.push([bx0, G.y + BOX_TOP + 7, bx1 - bx0, BOX_BOT - BOX_TOP - 7]);
+    }
+    g.save(); g.globalAlpha = a;
+    g.fillStyle = "rgb(4,7,5)"; shapes.forEach(([x, y, w, h]) => rrect(x, y, w, h, 2));
+    if (rim.on) {                    // the art is drawn at about 0.83 scale, so 1 art pixel is about 0.83 screen pixels
+      const k = 843 / 1020, inW = Math.ceil(rim.size / 2) * k, outW = Math.floor(rim.size / 2) * k;
+      g.strokeStyle = rim.color; g.lineWidth = inW + outW;
+      shapes.forEach(([x, y, w, h]) => { const d = (outW - inW) / 2; rrectPath(x - d, y - d, w + 2 * d, h + 2 * d, 2); g.stroke(); });
+    }
+    g.restore();
+  }
+  for (let i = 0; i < CAL.segs; i++) { g.fillStyle = COLORS[p](i); g.fillRect(L + i * CAL.pitch, G.y - (CAL.segH - 1) / 2, CAL.seg, CAL.segH); }
+  (p === "p1" ? [["46", 640], ["28", 981], ["7", 1066], ["22", 1324.5]] : [["50", 1073], ["8", 1175], ["13", 1324]])
+    .forEach(([s2, x]) => txt(s2, G.cx - 960 + x, G.y + CAL.countDy - (t.counts && t.counts.raised ? CAL.countRaise : 0), 15, "center", "#ececec", 600));
+  const lab = p === "p1" ? "P1" : "P2";
+  if (t.inner.on) txt(lab, G.inner.x, G.inner.y, 12, "center", "#fff");
+  if (t.outer.on) txt(lab, G.outer.x, G.outer.y, 12, G.outerAlign, "#fff");
+  if (t.num.on) txt(p === "p1" ? "-21" : "+21", G.num.x, G.num.y, 25, "center", "#fff");
+  if (t.tag.on) txt(lab, G.tag.x, G.tag.y, 12, G.tagAlign, "#fff");
+  if (counters) {
+    const ax = G.m < 0 ? G.cx - BOX_IN - 4 : G.cx + BOX_IN + 4, al = G.m < 0 ? "right" : "left";
+    [["0", 2], ["0", 25], ["[1.00]", 48]].forEach(([s2, dy]) => txt(s2, ax, G.y + dy, 13, al, "#fff", 600));
+  }
+  return [G.cx + CAL.outL, G.cx + CAL.outR, G.num.x, G.tag.x, G.outer.x, G.inner.x, G.y, G.num.y, G.tag.y];
+}
+// "SEARCHING FOR PLAYERS..." banner the game shows over the bars while matchmaking (training mode + online search).
+// Measured: band y 903-965 fading out towards x 590 / 1330, gold rules top and bottom, text centred at (958, 932).
+function drawSearching() {
+  const y0 = 903, y1 = 963, xL = 560, xR = 1360;
+  const band = g.createLinearGradient(xL, 0, xR, 0);
+  band.addColorStop(0, "rgba(14,16,26,0)"); band.addColorStop(0.22, "rgba(14,16,26,.82)");
+  band.addColorStop(0.78, "rgba(14,16,26,.82)"); band.addColorStop(1, "rgba(14,16,26,0)");
+  g.fillStyle = band; g.fillRect(xL, y0, xR - xL, y1 - y0);
+  const rule = g.createLinearGradient(xL, 0, xR, 0);
+  rule.addColorStop(0, "rgba(201,170,104,0)"); rule.addColorStop(0.2, "rgba(201,170,104,.95)");
+  rule.addColorStop(0.8, "rgba(201,170,104,.95)"); rule.addColorStop(1, "rgba(201,170,104,0)");
+  g.fillStyle = rule; g.fillRect(xL, y0, xR - xL, 2); g.fillRect(xL, y1 - 2, xR - xL, 2);
+  g.save();
+  g.font = "600 30px 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if ("letterSpacing" in g) g.letterSpacing = "1px";
+  g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 4; g.fillStyle = "#f4efe4";
+  g.fillText("SEARCHING FOR PLAYERS...", 958.5, 933);
+  g.restore();
+}
+function drawGrid() {
+  const G = UI.grid, acc = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#e07a3f";
+  if (G.on && G.size >= 2) {
+    g.lineWidth = 1;
+    for (let x = 0; x <= 1920; x += G.size) { g.strokeStyle = x % (G.size * 10) === 0 ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.07)"; g.beginPath(); g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, 1080); g.stroke(); }
+    for (let y = 0; y <= 1080; y += G.size) { g.strokeStyle = y % (G.size * 10) === 0 ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.07)"; g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(1920, y + 0.5); g.stroke(); }
+    g.strokeStyle = "rgba(255,255,255,.28)"; g.beginPath(); g.moveTo(960.5, 0); g.lineTo(960.5, 1080); g.stroke();
+  }
+  g.save(); g.strokeStyle = acc; g.lineWidth = 1.5; g.setLineDash([8, 6]);
+  if (G.gxOn) [960 - G.gx, 960 + G.gx].forEach(x => { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 1080); g.stroke(); });
+  if (G.gyOn) { g.beginPath(); g.moveTo(0, G.gy); g.lineTo(1920, G.gy); g.stroke(); }
+  g.restore();
+}
+function draw() {
+  const s = view === "file" && fileS ? fileS : S, counters = view === "default" || (view === "file" && fileKind === "original");
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 1080);
+  const pass = () => {
+    const c = bgColour(), grad = g.createLinearGradient(0, 0, 0, 1080);
+    grad.addColorStop(0, shade(c, 0.18)); grad.addColorStop(1, shade(c, -0.22)); g.fillStyle = grad;
+    g.fillRect(0, 0, 1920, 1080);
+    drawGrid();
+    const b = [...drawSide(s, "p1", counters), ...drawSide(s, "p2", counters)];
+    if (UI.grid.mm) drawSearching();
+    const py = 1030;
+    [["≡", 724], ["X", 854], ["Y", 900], ["RB", 946], ["A", 992]].forEach(([t, x]) => {
+      g.fillStyle = "rgba(20,22,26,.85)"; g.beginPath(); g.arc(x, py, 17, 0, Math.PI * 2); g.fill();
+      txt(t, x, py, t === "RB" ? 10 : 16, "center", "#d8d8d8");
+    });
+    txt("PAUSE", 750, py, 22, "left", "#efe6d0", 500); txt("(HOLD ALL) RESET", 1016, py, 22, "left", "#efe6d0", 500);
+    return b;
+  };
+  const b = pass();
+  const xs = [b[0], b[1], b[2], b[3], b[4], b[5], b[9], b[10], b[11], b[12], b[13], b[14]], ys = [b[6], b[7], b[8], b[15], b[16], b[17]];
+  UI.fit = 1920 / Math.max(400, Math.min(1920, Math.max(...xs) + 60) - Math.max(0, Math.min(...xs) - 60));   // zoom that frames the bars
+  if (UI.zoom > 1) {
+    // zoom around the centre of the bars, kept inside the 1920x1080 screen
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2 + UI.panX, cy = (Math.min(...ys) + Math.max(...ys)) / 2 + UI.panY;
+    const w = 1920 / UI.zoom, h = 1080 / UI.zoom;
+    const left = Math.min(Math.max(cx - w / 2, 0), 1920 - w), top = Math.min(Math.max(cy - h / 2, 0), 1080 - h);
+    UI.panX += (left + w / 2) - cx; UI.panY += (top + h / 2) - cy;   // stop the pan running past the screen edge
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 1080);
+    g.setTransform(UI.zoom, 0, 0, UI.zoom, -left * UI.zoom, -top * UI.zoom); pass();
+  }
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const groups = $("groups");
+function makeNum(p, el, f) {
+  const [key, label, min, max, opt] = f, id = p + "_" + el.key + "_" + key;
+  const step = (opt && opt.step) || 0.5, nudges = (opt && opt.nudges) || [-10, -1, -0.5, 0.5, 1, 10];
+  const w = document.createElement("div"); w.className = "ctl";
+  w.innerHTML = '<div class="lab"><span>' + label + '</span><input type="number" step="' + step + '" min="' + (opt ? min : "") + '" max="' + (opt ? max : "") + '" id="' + id + 'n"></div>' +
+    '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '">' +
+    '<div class="nudge">' + nudges.map(d => '<button data-d="' + d + '">' + (d > 0 ? "+" : "−") + Math.abs(d) + '</button>').join("") + '</div>';
+  const apply = (v, dir) => {
+    if (isNaN(v)) return;
+    v = Math.round(v / step) * step;
+    if (opt) v = Math.min(max, Math.max(min, v));             // bounded values (opacity)
+    if (!dir && v === S[p][el.key][key]) return;            // nothing changed (e.g. a box re-synced on blur)
+    if (UI.snap[el.key]) v = snapValue(p, el.key, key, v, dir || 0);
+    if (linked(el.key) && (p === "p1" || !UI.simple)) {
+      const o = p === "p1" ? "p2" : "p1", d = v - S[p][el.key][key];
+      let ov = Math.round((S[o][el.key][key] + (key === "x" ? -d : d)) / step) * step;   // X mirrored, Y the same
+      if (opt) ov = Math.min(max, Math.max(min, ov));
+      S[o][el.key][key] = ov;
+    }
+    S[p][el.key][key] = v; changed();
+  };
+  w.querySelector("#" + id).addEventListener("input", e => apply(parseFloat(e.target.value)));
+  w.querySelector("#" + id + "n").addEventListener("change", e => apply(parseFloat(e.target.value)));
+  w.querySelectorAll(".nudge button").forEach(btn => btn.addEventListener("click", () => { const d = parseFloat(btn.dataset.d); apply(S[p][el.key][key] + d, Math.sign(d)); }));
+  return w;
+}
+ELEMENTS.forEach(el => {
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = "<h2><span>" + el.name + '</span><span class="acts">' +
+    (el.fields.length || el.show || el.checks ? '<label class="check link-opt" title="Changes to either side also apply to the other (X mirrored, Y the same)"><input type="checkbox" data-link="' + el.key + '"> Link P1 &amp; P2</label>' : "") +
+    (el.fields.length && !el.noSnap ? '<label class="check" title="Snap to the grid and your margin lines"><input type="checkbox" data-snap="' + el.key + '"> Snap</label>' : "") +
+    '<button data-reset="' + el.key + '" title="Put this section back to the game\'s default values">Reset</button></span></h2>';
+  const sides = document.createElement("div"); sides.className = "sides";
+  ["p1", "p2"].forEach(p => {
+    const col = document.createElement("div"); col.className = "side " + p; col.id = p + "_" + el.key;
+    const h = document.createElement("h3");
+    h.innerHTML = '<span class="tag">' + p.toUpperCase() + "</span>" + (el.show ? '<label class="check" style="margin:0"><input type="checkbox" id="' + p + "_" + el.key + '_on"> show</label>' : "");
+    col.appendChild(h);
+    el.fields.forEach(f => col.appendChild(makeNum(p, el, f)));
+    (el.checks || []).forEach(([k, label]) => {
+      const c = document.createElement("label"); c.className = "check";
+      c.innerHTML = '<input type="checkbox" id="' + p + "_" + el.key + "_" + k + '"> ' + label;
+      c.querySelector("input").addEventListener("change", e => {
+        (linked(el.key) ? ["p1", "p2"] : [p]).forEach(q => { S[q][el.key][k] = e.target.checked; });
+        changed();
+      });
+      col.appendChild(c);
+    });
+    if (el.show) h.querySelector("input").addEventListener("change", e => {
+      const sidesToSet = linked(el.key) ? ["p1", "p2"] : [p];
+      sidesToSet.forEach(q => {
+        S[q][el.key].on = e.target.checked;
+        if (el.key === "tag" && e.target.checked) placeTagNextToNumber(q);
+      });
+      changed();
+    });
+    sides.appendChild(col);
+  });
+  card.appendChild(sides);
+  if (el.key === "bar") {           // the counter box belongs to the bar art, which both sides share
+    const r = document.createElement("div"); r.className = "rimrow";
+    r.innerHTML = '<label class="check"><input id="noBox" type="checkbox"> Remove the counter box</label><p class="note">Both bars share one image, so this applies to both.</p>';
+    card.appendChild(r);
+  }
+  if (el.rim) {                      // trim: one image is shared by both bars, so this applies to both
+    const r = document.createElement("div"); r.className = "rimrow";
+    r.innerHTML = '<label class="check"><input type="checkbox" id="rimOn"> <b>Trim</b></label>' +
+      '<label class="picker" title="Trim colour"><input id="rimColor" type="color" value="#c9a862"><span>Colour</span><code id="rimHex">#C9A862</code></label>' +
+      '<label class="rimsize">Size <input id="rimSize" type="range" min="1" max="6" step="1"><code id="rimSizeVal"></code></label>' +
+      '<p class="note">The trim colours the edge of the outline art on both bars. Size 1 is a thin edge; bigger sizes grow inward and outward. The trim uses the outline opacity.</p>';
+    card.appendChild(r);
+    r.querySelector("#rimOn").addEventListener("change", e => { S.rim.on = e.target.checked; changed(); });
+    r.querySelector("#rimColor").addEventListener("input", e => { S.rim.color = e.target.value; S.rim.on = true; changed(); });
+    r.querySelector("#rimSize").addEventListener("input", e => { S.rim.size = parseInt(e.target.value, 10); S.rim.on = true; changed(); });
+  }
+  groups.appendChild(card);
+  const lk = card.querySelector("[data-link]");
+  if (lk) lk.addEventListener("change", e => { UI.link[el.key] = e.target.checked; });
+  const sn = card.querySelector("[data-snap]");
+  if (sn) sn.addEventListener("change", e => { UI.snap[el.key] = e.target.checked; });
+  card.querySelector("[data-reset]").addEventListener("click", () => {
+    const d = PRESETS.shipped(); S.p1[el.key] = d.p1[el.key]; S.p2[el.key] = d.p2[el.key];
+    if (el.rim) S.rim = d.rim;
+    changed();
+  });
+});
+function syncUI() {
+  $("controls").classList.toggle("simple", UI.simple); $("simple").checked = UI.simple;
+  document.querySelectorAll(".side.p1 h3 .tag").forEach(t => t.textContent = UI.simple ? "BOTH" : "P1");
+  ["p1", "p2"].forEach(p => ELEMENTS.forEach(el => {
+    el.fields.forEach(([k]) => { const id = p + "_" + el.key + "_" + k; $(id).value = S[p][el.key][k]; $(id + "n").value = S[p][el.key][k]; });
+    if (el.show) { $(p + "_" + el.key + "_on").checked = S[p][el.key].on; }
+    (el.checks || []).forEach(([k]) => { $(p + "_" + el.key + "_" + k).checked = !!S[p][el.key][k]; });
+    const col = $(p + "_" + el.key);
+    col.querySelectorAll(".ctl").forEach(c => c.classList.toggle("dis", el.show && !S[p][el.key].on));
+  }));
+  $("noBox").checked = S.noBox;
+  $("rimOn").checked = S.rim.on; $("rimColor").value = S.rim.color; $("rimHex").textContent = S.rim.color.toUpperCase();
+  $("rimSize").value = S.rim.size; $("rimSizeVal").textContent = S.rim.size + " px";
+  $("rimColor").closest(".picker").classList.toggle("dis", !S.rim.on); $("rimSize").closest(".rimsize").classList.toggle("dis", !S.rim.on);
+  $("vFile").disabled = !fileKind; $("revert").disabled = !fileKind;
+  $("vFile").classList.toggle("on", view === "file"); $("vEdit").classList.toggle("on", view === "edit");
+  $("viewNote").textContent = view === "default"
+    ? "Showing the game's default layout. Make any change, pick a preset, or load a pak, and the preview follows your edits."
+    : view === "file"
+    ? (fileKind === "original" ? "Showing the loaded file as the game ships it (with its counters, which can't be kept once you save)." : "Showing the loaded file.")
+    : (fileKind ? "Showing your edits. This is what Download writes." : "Showing your edits. Load a pak to save them.");
+}
+function changed() { view = "edit"; syncUI(); draw(); table(); }
+$("simple").addEventListener("change", e => { UI.simple = e.target.checked; try { localStorage.setItem("framebar-simple", UI.simple ? "1" : "0"); } catch (err) {} syncUI(); });
+$("noBox").addEventListener("change", e => { S.noBox = e.target.checked; changed(); });
+$("pRec").addEventListener("click", () => { S = PRESETS.recommended(); changed(); });
+$("pShip").addEventListener("click", () => { S = PRESETS.shipped(); changed(); });
+$("revert").addEventListener("click", () => { S = clone(fileS); changed(); });
+$("vFile").addEventListener("click", () => { view = "file"; syncUI(); draw(); });
+$("vEdit").addEventListener("click", () => { view = "edit"; syncUI(); draw(); });
+function setZoom(z) {
+  UI.zoom = Math.min(8, Math.max(1, Math.round(z * 4) / 4));
+  if (UI.zoom === 1) { UI.panX = 0; UI.panY = 0; }
+  $("zoom").value = UI.zoom; $("zoomVal").textContent = UI.zoom + "\u00d7";
+  $("cv").classList.toggle("pannable", UI.zoom > 1); draw();
+}
+// click and drag to move around while zoomed in
+(() => {
+  const cv = $("cv"); let drag = null;
+  cv.addEventListener("pointerdown", e => {
+    if (UI.zoom <= 1) return;
+    drag = { x: e.clientX, y: e.clientY, px: UI.panX, py: UI.panY };
+    cv.setPointerCapture(e.pointerId); cv.classList.add("panning");
+  });
+  cv.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const perCssPx = 1920 / UI.zoom / cv.getBoundingClientRect().width;   // game pixels per screen pixel
+    UI.panX = drag.px - (e.clientX - drag.x) * perCssPx; UI.panY = drag.py - (e.clientY - drag.y) * perCssPx; draw();
+  });
+  const end = e => { if (!drag) return; drag = null; cv.classList.remove("panning"); try { cv.releasePointerCapture(e.pointerId); } catch (err) {} };
+  cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+  cv.addEventListener("dblclick", () => { UI.panX = 0; UI.panY = 0; draw(); });
+})();
+$("zoom").addEventListener("input", e => setZoom(parseFloat(e.target.value)));
+$("zoomFit").addEventListener("click", () => { UI.panX = 0; UI.panY = 0; setZoom(UI.fit || 2); });
+// keep the whole preview card inside the window: the canvas shrinks (keeping 16:9) to whatever height is left
+// The preview is sized as if the values table were closed, so opening it never changes the preview.
+// An open table scrolls inside the space left between its title and the bottom of the window.
+let cvHome = null;                  // where the canvas lives in the preview card (it moves to #cvDock on narrow screens)
+function fitPreview() {
+  const cvs = $("cv"), box = document.querySelector(".sticky"), body = $("valsBody"), sum = $("valsBox").querySelector("summary");
+  const narrow = matchMedia("(max-width:1100px)").matches, MIN_CV = 120, head = document.querySelector("header");
+  const hdr = Math.floor(head.getBoundingClientRect().height);   // the header (and, on narrow screens, the preview strip under it) stick as one block
+  document.documentElement.style.setProperty("--hdr", hdr + "px");
+  if (!cvHome) cvHome = { parent: cvs.parentElement, next: cvs.nextSibling };
+  cvs.style.width = ""; body.style.maxHeight = "none"; $("valsBox").classList.remove("up");
+  if (narrow) {                     // full width, capped so a sideways phone still shows the controls
+    if (cvs.parentElement !== $("cvDock")) $("cvDock").appendChild(cvs);
+    const full = $("cvDock").clientWidth - 16, h = Math.max(MIN_CV, (window.innerHeight - hdr) * 0.5);
+    if (full * 9 / 16 > h) cvs.style.width = Math.floor(h * 16 / 9) + "px";
+    body.style.maxHeight = Math.round(window.innerHeight * 0.5) + "px";
+    return;
+  }
+  if (cvs.parentElement !== cvHome.parent) cvHome.parent.insertBefore(cvs, cvHome.next);
+  const stuckTop = hdr + 12, startTop = Math.max(hdr + 12, $("controls").getBoundingClientRect().top + window.scrollY);   // where the column sits before it sticks
+  const budget = window.innerHeight - startTop - 12;   // fits before and after scrolling
+  body.style.display = "none";
+  const fixed = box.getBoundingClientRect().height - cvs.getBoundingClientRect().height;   // everything but the canvas, table closed
+  const full = cvs.parentElement.clientWidth - 28, h = Math.max(MIN_CV, budget - fixed);
+  if (full * 9 / 16 > h) cvs.style.width = Math.floor(h * 16 / 9) + "px";
+  const sumBottom = sum.getBoundingClientRect().bottom - box.getBoundingClientRect().top;    // title's bottom, from the column top
+  body.style.display = "";
+  const below = Math.floor(window.innerHeight - stuckTop - sumBottom - 26);
+  if (body.scrollHeight <= below) body.style.maxHeight = below + "px";     // room below: drop down as normal
+  else {                                                                   // no room: open upward over the preview instead
+    $("valsBox").classList.add("up");
+    body.style.maxHeight = Math.max(110, Math.floor(sumBottom - sum.getBoundingClientRect().height - 40)) + "px";
+  }
+}
+// Header: one line where it fits. Steps: short subtitle, then the theme dropdown, then (phones) the credit
+// moves to its own line under the full title.
+function fitHeader() {
+  const h = document.querySelector("header"), LV = ["lv1", "lv2", "twoLine"];
+  LV.forEach(c => h.classList.remove(c));
+  const fits = () => h.classList.contains("twoLine") || h.scrollWidth <= h.clientWidth + 1 && [...h.querySelectorAll("h1, .sub")].every(e => e.scrollWidth <= e.clientWidth + 1);
+  for (let i = 0; i < LV.length && !fits(); i++) h.classList.add(LV[i]);
+  if (!h.classList.contains("lv2")) themeMenu(false);
+}
+let fitQueued = false;
+function relayout() { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitHeader(); fitPreview(); }); }
+window.addEventListener("resize", relayout);
+if (window.ResizeObserver) new ResizeObserver(relayout).observe(document.querySelector("header"));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+// preview background: the theme's colour, or one the viewer picks (with a soft top-to-bottom shade)
+function bgColour() { return UI.bg || getComputedStyle(document.documentElement).getPropertyValue("--preview").trim() || "#2b3038"; }
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(amt > 0 ? v + (255 - v) * amt : v * (1 + amt))));
+  return "rgb(" + f(n >> 16) + "," + f((n >> 8) & 255) + "," + f(n & 255) + ")";
+}
+function syncBg() { const c = bgColour(); $("bgColor").value = c; $("bgHex").textContent = c.toUpperCase(); $("bgReset").hidden = !UI.bg; }
+function setBg(v) {
+  UI.bg = v; try { v ? localStorage.setItem("framebar-bg", v) : localStorage.removeItem("framebar-bg"); } catch (err) {}
+  syncBg(); draw();
+}
+$("bgColor").addEventListener("input", e => setBg(e.target.value));
+function syncGrid() {
+  const G = UI.grid;
+  $("gridOn").checked = G.on; $("gridSize").value = G.size; $("guideXOn").checked = G.gxOn; $("guideX").value = G.gx; $("guideYOn").checked = G.gyOn; $("guideY").value = G.gy;
+  $("mmOn").checked = G.mm;
+  $("guideXVal").textContent = "\u00b1" + G.gx; $("guideYVal").textContent = "y " + G.gy;
+  $("gridSize").disabled = !G.on; $("guideX").disabled = !G.gxOn; $("guideY").disabled = !G.gyOn;
+  try { localStorage.setItem("framebar-grid", JSON.stringify(G)); } catch (err) {}
+}
+[["gridOn", "on", "checked"], ["guideXOn", "gxOn", "checked"], ["guideYOn", "gyOn", "checked"], ["mmOn", "mm", "checked"]].forEach(([id, k]) =>
+  $(id).addEventListener("change", e => { UI.grid[k] = e.target.checked; syncGrid(); draw(); }));
+[["gridSize", "size", 2, 200, "change"], ["guideX", "gx", 0, 960, "input"], ["guideY", "gy", 0, 1080, "input"]].forEach(([id, k, lo, hi, ev]) =>
+  $(id).addEventListener(ev, e => { const v = parseFloat(e.target.value); if (!isNaN(v)) UI.grid[k] = Math.min(hi, Math.max(lo, v)); syncGrid(); draw(); }));
+syncGrid();
+$("bgReset").addEventListener("click", e => { e.preventDefault(); setBg(null); });
+function setTheme(t) {
+  document.documentElement.dataset.theme = t; try { localStorage.setItem("framebar-theme", t); } catch (err) {}
+  document.querySelectorAll(".swatch").forEach(b => b.classList.toggle("on", b.dataset.theme === t));
+  const cur = document.querySelector('.swatch[data-theme="' + t + '"]');
+  if (cur) { $("themeDot").style.background = cur.querySelector("span").style.background; $("themeName").textContent = cur.title; }
+}
+// phones: the theme swatches live in a dropdown
+function themeMenu(open) { $("themeWrap").classList.toggle("open", open); $("themeBtn").setAttribute("aria-expanded", open ? "true" : "false"); }
+$("themeBtn").addEventListener("click", e => { e.stopPropagation(); themeMenu(!$("themeWrap").classList.contains("open")); });
+document.addEventListener("click", e => { if (!$("themeWrap").contains(e.target)) themeMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") themeMenu(false); });
+function pickTheme(t) { setTheme(t); setBg(null); }   // choosing a palette also brings the preview back to that palette
+document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => { pickTheme(b.dataset.theme); themeMenu(false); }));
+(() => { let t = "dark"; try { t = localStorage.getItem("framebar-theme") || "dark"; } catch (err) {} if (!document.querySelector('.swatch[data-theme="' + t + '"]')) t = "dark"; setTheme(t); })();
+syncBg(); draw();
+function table() {
+  const tb = document.querySelector("#vals tbody"); tb.innerHTML = "";
+  const add = c => { const tr = document.createElement("tr"); c.forEach(x => { const td = document.createElement("td"); td.textContent = x; tr.appendChild(td); }); tb.appendChild(tr); return tr; };
+  const f = (p, el) => { const t = S[p][el]; return (t.on === false ? "hidden" : ("x " + t.x + ", y " + t.y)); };
+  add(["Bar (X, row y)", "x " + S.p1.bar.x + ", y " + S.p1.bar.y, "x " + S.p2.bar.x + ", y " + S.p2.bar.y]);
+  const op = p => S[p].outline.on ? S[p].outline.op + "% (" + Math.round(S[p].outline.op * 2048 / 100) + ")" : "hidden";
+  add(["Outline opacity", op("p1"), op("p2")]);
+  const tr = S.rim.on ? S.rim.color.toUpperCase() + ", " + S.rim.size + " px" : "off";
+  add(["Trim (shared image)", tr, tr]);
+  add(["Frame counts", S.p1.counts.raised ? "above the strip" : "below (game default)", S.p2.counts.raised ? "above the strip" : "below (game default)"]);
+  [["inner", "Inner label"], ["outer", "Outer label"], ["num", "Frame advantage"], ["tag", "P1/P2 beside frame advantage"]].forEach(([k, n]) => add([n, f("p1", k), f("p2", k)]));
+  add(["Counter box", S.noBox ? "removed" : "shown", S.noBox ? "removed" : "shown"]);
+  if (base) { try { patch(); } catch (err) { add([err.message, "", ""]).style.color = "var(--bad)"; } }
+}
+async function sha256(u8) { if (!(window.crypto && crypto.subtle)) return null; return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", u8))).map(b => b.toString(16).padStart(2, "0")).join(""); }
+async function load(file) {
+  const st = $("status");
+  try {
+    const u8 = new Uint8Array(await file.arrayBuffer());
+    const info = readPak(u8); sprOff = info.spr; frameEntry = info.frame;
+    const kind = detect(u8);
+    if (kind === "unknown") { st.className = "status bad"; st.textContent = "This pak was changed by something other than this editor (an older test build, or a game update). Load training_timing_bar.pak.bak instead."; return; }
+    base = u8; fileKind = kind;
+    if (kind === "original") {
+      fileS = PRESETS.shipped();
+      const h = await sha256(u8);
+      const known = h ? ORIGINAL_SHA256[h] : undefined;
+      st.className = h && !known ? "status warn" : "status ok";
+      st.textContent = h && !known ? "Loaded " + file.name + ": shipped layout, but not a game version this editor was built against. Check the result in game."
+        : "Loaded " + file.name + ": the game's original layout" + (known ? " (script version " + known + ")" : "") + ".";
+    } else {
+      fileS = kind === "v3" ? readV3(u8) : readV1(u8);
+      st.className = "status ok"; st.textContent = "Loaded " + file.name + ": a patched layout" + (kind === "v1" ? " (from an earlier build of this editor)" : "") + ". The controls show its values.";
+    }
+    S = clone(fileS); view = "edit"; $("save").disabled = false; syncUI(); draw(); table();
+  } catch (err) { st.className = "status bad"; st.textContent = err.message; }
+}
+const drop = $("drop");
+drop.addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", e => { if (e.target.files[0]) load(e.target.files[0]); e.target.value = ""; });
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("hot"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("hot"); }));
+drop.addEventListener("drop", e => e.dataTransfer.files[0] && load(e.dataTransfer.files[0]));
+$("save").addEventListener("click", () => {
+  try {
+    const bytes = patch(), a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
+    a.download = "training_timing_bar.pak"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (err) { $("status").className = "status bad"; $("status").textContent = err.message; }
+});
+try { $("valsBox").open = localStorage.getItem("framebar-vals") === "1"; } catch (err) {}
+$("valsBox").addEventListener("toggle", () => { try { localStorage.setItem("framebar-vals", $("valsBox").open ? "1" : "0"); } catch (err) {} fitPreview(); });
+syncUI(); draw(); table(); fitHeader(); fitPreview();
+})();
+</script>
+</body>
+</html>
